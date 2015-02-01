@@ -20,8 +20,8 @@ end
 
 # When creating the tree we split the parents hyper rectangles
 # so that each children gets its own.
-function split_hyper_rec{T <: FloatingPoint}(hyper_rec::HyperRectangle, 
-                                             dim::Int, 
+function split_hyper_rec{T <: FloatingPoint}(hyper_rec::HyperRectangle,
+                                             dim::Int,
                                              value::T)
     new_max = copy(hyper_rec.maxes)
     new_max[dim] = value
@@ -219,7 +219,7 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
         dist_d = euclidean_distance(get_point(tree, index), point)
         if dist_d <= best_dists[k] # Closer than the currently k closest.
             ins_point = 1
-            while(ins_point < k && dist_d > best_dists[ins_point + 1]) # Look through best_dists for insertion point
+            while(ins_point < k && dist_d > best_dists[ins_point]) # Look through best_dists for insertion point
                 ins_point +=1
             end
             for (i in k:-1:ins_point+1) # Shift down
@@ -297,7 +297,7 @@ end
 
 #=
 # TODO: To avoid the sqrt maybe?
-function euclidean_distance_red{T <: FloatingPoint}(point_1::Array{T, 1}, 
+function euclidean_distance_red{T <: FloatingPoint}(point_1::Array{T, 1},
                                                     point_2::Array{T, 1})
   dist = 0.0
   for i in 1:size(point_1, 1)
