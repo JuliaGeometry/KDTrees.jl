@@ -1,6 +1,7 @@
 
 # Todo: update to mikowski, p = 1, inf
-function euclidean_distance{T <: FloatingPoint}(point_1::Array{T, 1}, point_2::Array{T, 1})
+function euclidean_distance{T <: FloatingPoint}(point_1::Array{T, 1},
+                                                point_2::Array{T, 1})
     dist = 0.0
     for i in 1:size(point_1, 1)
         dist += (point_1[i] - point_2[i]) * (point_1[i] - point_2[i])
@@ -19,7 +20,9 @@ end
 
 # When creating the tree we split the parents hyper rectangles
 # so that each children gets its own.
-function split_hyper_rec{T <: FloatingPoint}(hyper_rec::HyperRectangle, dim::Int, value::T)
+function split_hyper_rec{T <: FloatingPoint}(hyper_rec::HyperRectangle, 
+                                             dim::Int, 
+                                             value::T)
     new_max = copy(hyper_rec.maxes)
     new_max[dim] = value
 
@@ -113,15 +116,14 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T})
 # and how many points to send to each side.
 # Splits the hyper cubes and calls recursively
 # with the new cubes and node indices.
-function build_KDTree{T <: FloatingPoint}(
-                                     index::Int,
-                                     data::Matrix{T},
-                                     perm::SubArray{Int,1},
-                                     split_vals::Vector{T},
-                                     split_dims::Vector{Int8},
-                                     hyper_recs::Vector{HyperRectangle},
-                                     n_internal_nodes::Int,
-                                     indices::Vector{Int})
+function build_KDTree{T <: FloatingPoint}(index::Int,
+                                          data::Matrix{T},
+                                          perm::SubArray{Int,1},
+                                          split_vals::Vector{T},
+                                          split_dims::Vector{Int8},
+                                          hyper_recs::Vector{HyperRectangle},
+                                          n_internal_nodes::Int,
+                                          indices::Vector{Int})
 
     n_points = length(perm) # Points left
     n_dim = size(data, 1)
@@ -203,11 +205,11 @@ end
 
 
 function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
-                                                                                    point::Array{T, 1},
-                                                                                    k::Int,
-                                                                                    best_idxs ::Array{Int, 1},
-                                                                                    best_dists::Array{T, 1},
-                                                                                    index::Int=1)
+                                                  point::Array{T, 1},
+                                                  k::Int,
+                                                  best_idxs ::Array{Int, 1},
+                                                  best_dists::Array{T, 1},
+                                                  index::Int=1)
 
     min_d, max_d = get_min_max_distance(tree.hyper_recs[index], point)
     if min_d > best_dists[k]
@@ -244,8 +246,8 @@ end
 # Returns the indices for all points in the tree inside a
 # hypersphere of a given point with a given radius
 function query_ball_point{T <: FloatingPoint}(tree::KDTree,
-                                                                           point::Vector{T},
-                                                                           radius::T)
+                                              point::Vector{T},
+                                              radius::T)
 
     index = 1
     idx_in_ball = Int[]
@@ -256,10 +258,10 @@ end
 
 # Explicitly check the distance between leaf node and point
 function traverse_check{T <: FloatingPoint}(tree::KDTree,
-                                                                          index::Int,
-                                                                          point::Array{T, 1},
-                                                                          r::T,
-                                                                          idx_in_ball::Vector{Int})
+                                            index::Int,
+                                            point::Array{T, 1},
+                                            r::T,
+                                            idx_in_ball::Vector{Int})
 
     min_d, max_d = get_min_max_distance(tree.hyper_recs[index], point)
     if min_d > r # Hyper shpere is outside hyper rectangle, skip the whole sub tree
@@ -280,7 +282,7 @@ end
 
 # Adds everything in this subtree since we have determined
 #that the hyper rectangle completely encloses the hyper sphere
-function  traverse_no_check(tree::KDTree, index::Int, idx_in_ball::Vector{Int})
+function traverse_no_check(tree::KDTree, index::Int, idx_in_ball::Vector{Int})
     if is_leaf_node(tree, index)
         push!(idx_in_ball, tree.indices[get_point_index(tree, index)])
         return
@@ -295,7 +297,8 @@ end
 
 #=
 # TODO: To avoid the sqrt maybe?
-function euclidean_distance_red{T <: FloatingPoint}(point_1::Array{T, 1}, point_2::Array{T, 1})
+function euclidean_distance_red{T <: FloatingPoint}(point_1::Array{T, 1}, 
+                                                    point_2::Array{T, 1})
   dist = 0.0
   for i in 1:size(point_1, 1)
     dist += (point_1[i] - point_2[i]) * (point_1[i] - point_2[i])
