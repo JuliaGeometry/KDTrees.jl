@@ -28,11 +28,11 @@ facts("KDtree") do
         @fact sqrt(0.2^2 + 0.2^2) => roughly(dists[1])
 
         idxs, dists = k_nearest_neighbour(tree, [0.1, 0.8], 3)
-        @fact idxs => [2, 3, 5]
+        @fact idxs => [3, 2, 5]
 
 
         @fact_throws  k_nearest_neighbour(tree, [0.1, 0.8], 10) # k > n_points
-    end
+    end  #context
 
     context("KDtree.ball_query") do
 
@@ -53,6 +53,23 @@ facts("KDtree") do
 
          idxs = query_ball_point(tree, [0.5, 0.5, 0.5], 1.0)
         @fact idxs => [1, 2, 3, 4, 5, 6, 7, 8] #
-    end
+    end #context
 
-end # Module
+    context("KDtree.yolo_testing") do
+
+        # Tests that the n-points in a random hyper sphere around
+        # a random point are all the n-closest points to that point.... yeah
+        dim_data = rand(1:5)
+        size_data = rand(2:10000)
+        data = randn(dim_data, size_data)
+        tree = KDTree(data)
+
+        point = [randn() for x in 1:dim_data]
+        idxs_ball = query_ball_point(tree,  point, 0.2)
+        idxs_knn, dists = k_nearest_neighbour(tree, point, length(idxs_ball))
+
+        for i in 1:length(idxs_ball)
+            @fact idxs_ball[i] in idxs_knn => true
+        end
+    end #context
+end # facts
