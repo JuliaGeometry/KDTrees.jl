@@ -189,8 +189,8 @@ end
 # Finds the k nearest neighbour to a given point in space.
 function k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree, point::Array{T, 1}, k::Int)
 
-    if k > size(tree.data, 2)
-        error("k > number of points in tree")
+    if k > size(tree.data, 2) || k < 0
+        error("k > number of points in tree or < 0")
     end
     best_idxs = [-1 for i in 1:k]
     best_dists = [typemax(T) for i in 1:k]
