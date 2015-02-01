@@ -9,5 +9,4 @@ module TestKDtree
 
     FactCheck.exitstatus()
 
-end
-#module
+end #module
