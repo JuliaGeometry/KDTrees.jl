@@ -1,5 +1,7 @@
 # KDtree.jl
 
+[![Build Status](https://travis-ci.org/KristofferC/KDtree.jl.svg)](https://travis-ci.org/KristofferC/KDtree.jl) [![Coverage Status](https://coveralls.io/repos/KristofferC/KDtree.jl/badge.svg)](https://coveralls.io/r/KristofferC/KDtree.jl)
+
 Kd tree for Julia.
 
 Currently supports KNN-search and finding all points inside an hyper sphere.
