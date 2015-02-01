@@ -1,0 +1,11 @@
+language: julia
+julia:
+    - release
+    - nightly
+notifications:
+    email: false
+script:
+  - julia -e 'Pkg.test("KDtree", coverage=true)'
+
+after_success:
+- julia -e 'cd(Pkg.dir("KDtree")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
