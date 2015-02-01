@@ -60,13 +60,20 @@ facts("KDtree") do
         # Tests that the n-points in a random hyper sphere around
         # a random point are all the n-closest points to that point.... yeah
         dim_data = rand(1:5)
-        size_data = rand(2:10000)
+        size_data = rand(100:10000)
         data = randn(dim_data, size_data)
         tree = KDTree(data)
 
         point = [randn() for x in 1:dim_data]
-        idxs_ball = query_ball_point(tree,  point, 0.2)
+        idxs_ball = []
+        r = 0.1
+        while length(idxs_ball) < 10
+            r *= 2.0
+            idxs_ball = query_ball_point(tree,  point, r)
+        end
         idxs_knn, dists = k_nearest_neighbour(tree, point, length(idxs_ball))
+
+
 
         for i in 1:length(idxs_ball)
             @fact idxs_ball[i] in idxs_knn => true
