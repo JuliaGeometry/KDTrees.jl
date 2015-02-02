@@ -1,4 +1,3 @@
-
 # Todo: update to mikowski, p = 1, inf
 function euclidean_distance{T <: FloatingPoint}(point_1::Array{T, 1},
                                                 point_2::Array{T, 1})
@@ -111,6 +110,7 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T})
            hyper_recs, n_internal_nodes,  indices)
   end
 
+
 # Recursive function to build the tree.
 # Calculates what dimension has the maximum spread,
 # and how many points to send to each side.
@@ -161,14 +161,14 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
     rest = n_points - 2^k
 
     if rest > 2^(k-1)
-      mid_idx = 2^k
+        mid_idx = 2^k
     else
-       mid_idx = 2^(k-1) + rest
+        mid_idx = 2^(k-1) + rest
     end
 
-   # select! works like n_th element in c++
-   # sorts the points in the maximum spread dimension s.t
-   # data[split_dim, a]) < data[split_dim, b]) for all a > mid_idx, b > mid_idx
+    # select! works like n_th element in c++
+    # sorts the points in the maximum spread dimension s.t
+    # data[split_dim, a]) < data[split_dim, b]) for all a > mid_idx, b > mid_idx
     select_spec!(perm, mid_idx, 1, length(perm), data, split_dim)
 
     split = data[split_dim, perm[mid_idx]]
@@ -242,8 +242,6 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
         _k_nearest_neighbour(tree, point, k,best_idxs, best_dists,  get_left_node(index))
     end
 end
-
-
 # Returns the indices for all points in the tree inside a
 # hypersphere of a given point with a given radius
 function query_ball_point{T <: FloatingPoint}(tree::KDTree,
@@ -292,6 +290,7 @@ function traverse_no_check(tree::KDTree, index::Int, idx_in_ball::Vector{Int})
         traverse_no_check(tree, get_right_node(index), idx_in_ball)
       end
 end
+
 
 # Taken from https://github.com/JuliaLang/julia/blob/v0.3.5/base/sort.jl
 # and modified because I couldn't figure out how to get rid of
