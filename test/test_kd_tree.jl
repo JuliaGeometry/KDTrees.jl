@@ -20,7 +20,7 @@ facts("KDtree") do
 
        # 8 node rectangle
         data = [0.0 0.0 0.0 0.5 0.5 1.0 1.0 1.0;
-                     0.0 0.5 1.0 0.0 1.0 0.0 0.5 1.0]
+                0.0 0.5 1.0 0.0 1.0 0.0 0.5 1.0]
         tree = KDTree(data)
 
         idxs, dists = k_nearest_neighbour(tree, [0.8, 0.8], 1)
@@ -30,15 +30,16 @@ facts("KDtree") do
         idxs, dists = k_nearest_neighbour(tree, [0.1, 0.8], 3)
         @fact idxs => [3, 2, 5]
 
+        @fact_throws k_nearest_neighbour(tree, [0.1, 0.8], 10) # k > n_points
 
-        @fact_throws  k_nearest_neighbour(tree, [0.1, 0.8], 10) # k > n_points
+        @fact_throws k_nearest_neighbour(tree, [0.1], 10) # n_dim != trees dim
     end  #context
 
     context("KDtree.ball_query") do
 
         data = [0.0 0.0 0.0 0.0 1.0 1.0 1.0 1.0;
-                      0.0 0.0 1.0 1.0 0.0 0.0 1.0 1.0;
-                      0.0 1.0 0.0 1.0 0.0 1.0 0.0 1.0] # 8 node cube
+                0.0 0.0 1.0 1.0 0.0 0.0 1.0 1.0;
+                0.0 1.0 0.0 1.0 0.0 1.0 0.0 1.0] # 8 node cube
 
         tree = KDTree(data)
 
@@ -48,11 +49,13 @@ facts("KDtree") do
         idxs = query_ball_point(tree, [0.0, 0.0, 0.5], 0.6)
         @fact idxs => [1, 2] # Corner 1 and 2 at least 0.6 distance away from [0.0, 0.0, 0.5]
 
-         idxs = query_ball_point(tree, [0.5, 0.5, 0.5], 0.2)
+        idxs = query_ball_point(tree, [0.5, 0.5, 0.5], 0.2)
         @fact idxs => [] #
 
-         idxs = query_ball_point(tree, [0.5, 0.5, 0.5], 1.0)
+        idxs = query_ball_point(tree, [0.5, 0.5, 0.5], 1.0)
         @fact idxs => [1, 2, 3, 4, 5, 6, 7, 8] #
+
+        @fact_throws query_ball_poin(tree, [0.1], 1.0) # n_dim != trees dim
     end #context
 
     context("KDtree.yolo_testing") do

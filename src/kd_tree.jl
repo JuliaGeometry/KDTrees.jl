@@ -77,6 +77,14 @@ is_leaf_node(tree::KDTree, idx::Int) = idx > tree.n_internal_nodes
 function KDTree{T <: FloatingPoint}(data::Matrix{T})
 
     n_dim, n_points = size(data)
+
+    if n_dim > 20
+        warn(string("You are sending in data with a large dimension, n_dim = ", n_dim, 
+            ". K-d trees are not optimal for high dimensional data.", 
+            " The data matrix should be given in dimensions (n_dim, n_points).",
+            " Did you acidentally flip them?"))
+    end
+
     n_internal_nodes = n_points - 1
     n_total_nodes = n_internal_nodes + n_points
 
@@ -190,9 +198,16 @@ end
 # Finds the k nearest neighbour to a given point in space.
 function k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree, point::Array{T, 1}, k::Int)
 
-    if k > size(tree.data, 2) || k < 0
-        error("k > number of points in tree or < 0")
+    if k > size(tree.data, 2) || k <= 0
+        error("k > number of points in tree or <= 0")
     end
+
+    if size(point,1) != size(tree.data, 1)
+        error(string("Wrong dimension of input point, points in the tree",
+                     " have dimension ", size(tree.data, 1), " you",
+                     " gave a point with dimension ", size(point,1), "."))
+    end
+
     best_idxs = [-1 for i in 1:k]
     best_dists = [typemax(T) for i in 1:k]
 
@@ -248,6 +263,12 @@ function query_ball_point{T <: FloatingPoint}(tree::KDTree,
                                               point::Vector{T},
                                               radius::T)
 
+    if size(point,1) != size(tree.data, 1)
+        error(string("Wrong dimension of input point, points in the tree",
+                     " have dimension ", size(tree.data, 1), " you",
+                     " gave a point with dimension ", size(point,1), "."))
+    end
+
     index = 1
     idx_in_ball = Int[]
     traverse_check(tree, index, point, radius, idx_in_ball)
@@ -265,7 +286,7 @@ function traverse_check{T <: FloatingPoint}(tree::KDTree,
     min_d, max_d = get_min_max_distance(tree.hyper_recs[index], point)
     if min_d > r # Hyper shpere is outside hyper rectangle, skip the whole sub tree
         return
-    elseif (max_d < r)
+    elseif max_d < r
         traverse_no_check(tree, index, idx_in_ball)
     elseif is_leaf_node(tree, index)
         if euclidean_distance(get_point(tree, index), point) < r
@@ -280,7 +301,7 @@ end
 
 
 # Adds everything in this subtree since we have determined
-#that the hyper rectangle completely encloses the hyper sphere
+# that the hyper rectangle completely encloses the hyper sphere
 function traverse_no_check(tree::KDTree, index::Int, idx_in_ball::Vector{Int})
     if is_leaf_node(tree, index)
         push!(idx_in_ball, tree.indices[get_point_index(tree, index)])
