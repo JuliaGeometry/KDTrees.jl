@@ -8,21 +8,17 @@ times = Array(Float64, length(ks), length(n_points))
 
 # Compile it
 tree = KDTree(randn(2,2))
-k_nearest_neighbours(tree, zeros(2), 1)
+k_nearest_neighbour(tree, zeros(2), 1)
 
-
-i = 0
-for k in ks
-    j = 0
-    i+=1
-    for n_point in n_points
-        j+=1
+for (i, k) in enumerate(ks)
+    for (j , n_point) in enumerate(n_points)
         data = randn(dims, n_point)
         tree = KDTree(data)
         times[i,j]  = @elapsed k_nearest_neighbour(tree, zeros(dims), k)
     end
 end
 
+println(times)
 
 #=
 2015-02-02:
