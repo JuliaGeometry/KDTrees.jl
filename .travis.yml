@@ -8,6 +8,7 @@ script:
     - julia -e 'Pkg.init(); Pkg.clone(pwd())'
     - julia -e 'using KDtree; @assert isdefined(:KDtree); @assert typeof(KDtree) === Module'
     - julia -e 'Pkg.add("FactCheck");'
+    - julia -e 'Pkg.add("ArrayViews");'
     - julia -e 'Pkg.test("KDtree", coverage=true)'
 
 after_success:
