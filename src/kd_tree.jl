@@ -13,9 +13,11 @@ end
 # For an inner node all it's children are bounded by the
 # inner nodes hyper rectangle.
 immutable HyperRectangle{T <: FloatingPoint}
-    mins::Vector{T}
-    maxes::Vector{T}
+    mins::Array{T, 1}
+    maxes::Array{T, 1}
 end
+
+
 
 
 # When creating the tree we split the parents hyper rectangles
@@ -55,9 +57,9 @@ end
 # The KDTree type
 immutable KDTree{T <: FloatingPoint}
   data::Matrix{T} # dim x n_points array with floats
-  split_vals::Vector{T} # what values we split the tree at for a given internal node
-  split_dims::Vector{Int8} # what dimension we split the tree for a given internal node
-  hyper_recs::Vector{HyperRectangle} # Each hyper rectangle bounds its children
+  split_vals::Array{T, 1} # what values we split the tree at for a given internal node
+  split_dims::Array{Int8, 1} # what dimension we split the tree for a given internal node
+  hyper_recs::Array{HyperRectangle{T}, 1} # Each hyper rectangle bounds its children
   n_internal_nodes::Int
   indices::Vector{Int}
 end
@@ -81,8 +83,8 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T})
     n_dim, n_points = size(data)
 
     if n_dim > 20
-        warn(string("You are sending in data with a large dimension, n_dim = ", n_dim, 
-            ". K-d trees are not optimal for high dimensional data.", 
+        warn(string("You are sending in data with a large dimension, n_dim = ", n_dim,
+            ". K-d trees are not optimal for high dimensional data.",
             " The data matrix should be given in dimensions (n_dim, n_points).",
             " Did you acidentally flip them?"))
     end
@@ -95,7 +97,7 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T})
     indices = Array(Int, n_points)
     split_vals = Array(T, n_internal_nodes)
     split_dims = Array(Int8, n_internal_nodes) # 128 dimensions should be enough
-    hyper_recs = Array(HyperRectangle, n_total_nodes)
+    hyper_recs = Array(HyperRectangle{T}, n_total_nodes)
 
     # Create first bounding hyper rectangle
     maxes = Array(T, n_dim)
@@ -110,11 +112,12 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T})
         maxes[j] = dim_max
         mins[j] = dim_min
     end
-    hyper_recs[1] = HyperRectangle(mins, maxes)
+    hyper_recs[1] = HyperRectangle{T}(mins, maxes)
 
     # Call the recursive KDTree builder
     build_KDTree(1, data, view(perm,1:length(perm)), split_vals,
                   split_dims, hyper_recs, n_internal_nodes, indices)
+              
 
     KDTree(data, split_vals, split_dims,
            hyper_recs, n_internal_nodes,  indices)
@@ -129,11 +132,11 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T})
 function build_KDTree{T <: FloatingPoint}(index::Int,
                                           data::Matrix{T},
                                           perm::AbstractVector,
-                                          split_vals::Vector{T},
-                                          split_dims::Vector{Int8},
-                                          hyper_recs::Vector{HyperRectangle},
+                                          split_vals::Array{T, 1},
+                                          split_dims::Array{Int8, 1},
+                                          hyper_recs::Array{HyperRectangle{T}, 1},
                                           n_internal_nodes::Int,
-                                          indices::Vector{Int})
+                                          indices::Array{Int, 1})
 
     n_points = length(perm) # Points left
     n_dim = size(data, 1)
