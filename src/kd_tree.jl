@@ -74,7 +74,7 @@ get_parent_node(idx::Int) = div(idx, 2)
 get_point_index(tree::KDTree, idx::Int) = idx - tree.n_internal_nodes
 
 # From node index -> point in data
-get_point(tree::KDTree, idx::Int) = view(tree.data, :, tree.indices[get_point_index(tree, idx)])
+get_point(tree::KDTree, idx::Int) = tree.data[:, tree.indices[get_point_index(tree, idx)]]
 
 is_leaf_node(tree::KDTree, idx::Int) = idx > tree.n_internal_nodes
 
@@ -115,9 +115,12 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T})
     end
     hyper_recs[1] = HyperRectangle{T}(mins, maxes)
 
+    low = 1
+    high = length(perm)
+
     # Call the recursive KDTree builder
-    build_KDTree(1, data, view(perm,1:length(perm)), split_vals,
-                  split_dims, hyper_recs, n_internal_nodes, indices)
+    build_KDTree(1, data, perm, split_vals,
+                  split_dims, hyper_recs, n_internal_nodes, indices, low, high)
               
 
     KDTree(data, split_vals, split_dims,
@@ -137,13 +140,15 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
                                           split_dims::Vector{Int8},
                                           hyper_recs::Vector{HyperRectangle{T}},
                                           n_internal_nodes::Int,
-                                          indices::Vector{Int})
+                                          indices::Vector{Int},
+                                          low::Int,
+                                          high::Int)
 
-    n_points = length(perm) # Points left
+    n_points = high - low + 1 # Points left
     n_dim = size(data, 1)
 
     if n_points <= 1
-        indices[index - n_internal_nodes] = perm[1]
+        indices[index - n_internal_nodes] = perm[low]
         return
     end
 
@@ -168,22 +173,21 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
 
     split_dims[index] = split_dim
 
-
     # Decide where to split
-    # k = floor(Integer, log2(n_points)) for v 0.4
+    # k = floor(Integer, log2(n_points)) # for v 0.4
     k = ifloor(log2(n_points)) # <- deprecated in v 0.4
     rest = n_points - 2^k
 
     if rest > 2^(k-1)
-        mid_idx = 2^k
+        mid_idx = 2^k + low
     else
-        mid_idx = 2^(k-1) + rest
+        mid_idx = 2^(k-1) + rest + low
     end
 
     # select! works like n_th element in c++
     # sorts the points in the maximum spread dimension s.t
     # data[split_dim, a]) < data[split_dim, b]) for all a > mid_idx, b > mid_idx
-    select_spec!(perm, mid_idx, 1, length(perm), data, split_dim)
+    select_spec!(perm, mid_idx, low, high, data, split_dim)
 
     split = data[split_dim, perm[mid_idx]]
     split_vals[index] = split
@@ -193,11 +197,11 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
     hyper_recs[get_left_node(index)] = hyper_rec_1
     hyper_recs[get_right_node(index)] = hyper_rec_2
 
-    build_KDTree(get_left_node(index), data,  view(perm, 1:mid_idx),
-                  split_vals, split_dims, hyper_recs, n_internal_nodes, indices )
+    build_KDTree(get_left_node(index), data,  perm,
+                  split_vals, split_dims, hyper_recs, n_internal_nodes, indices, low, mid_idx - 1)
 
-    build_KDTree(get_right_node(index), data, view(perm, mid_idx+1:length(perm)),
-                  split_vals, split_dims, hyper_recs, n_internal_nodes, indices )
+    build_KDTree(get_right_node(index), data, perm,
+                  split_vals, split_dims, hyper_recs, n_internal_nodes, indices, mid_idx, high)
 end
 
 

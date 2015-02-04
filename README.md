@@ -16,11 +16,6 @@ Since this is a new project there are still some obvious improvements which are 
 ## Author
 Kristoffer Carlsson (@KristofferC)
 
-## Requirements
-
-Currently the "ArrayViews" package is required because `sub` in v0.3 of Julia
-is quite bad.
-
 ## Examples
 
 In the examples, notice that the module is called `KDtree` and the actual tree type is called `KDTree`. This is because modules and types can currently not have the same name in Julia.
