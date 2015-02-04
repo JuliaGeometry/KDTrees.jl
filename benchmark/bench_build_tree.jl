@@ -8,12 +8,9 @@ times = Array(Float64, length(dims), length(n_points))
 # Compile
 KDTree(randn(2,2))
 
-i = 0
-for dim in dims
-    j = 0
-    i+=1
-    for n_point in n_points
-        j+=1
+
+for (i, dim) in enumerate(dims)
+    for (j, n_point) in enumerate(n_points)
         data = randn(dim, n_point)
         times[i,j]  = @elapsed KDTree(data)
     end
