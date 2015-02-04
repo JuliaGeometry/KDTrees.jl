@@ -18,8 +18,6 @@ immutable HyperRectangle{T <: FloatingPoint}
 end
 
 
-
-
 # When creating the tree we split the parents hyper rectangles
 # so that each children gets its own.
 function split_hyper_rec{T <: FloatingPoint}(hyper_rec::HyperRectangle{T},
@@ -253,12 +251,14 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
         return
     end
 
-    if point[tree.split_dims[index]] < tree.split_vals[index]
+    dist_l = get_min_max_distance(tree.hyper_recs[get_left_node(index)], point)
+    dist_r = get_min_max_distance(tree.hyper_recs[get_right_node(index)], point)
+    if dist_l < dist_r
         _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, get_left_node(index))
         _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, get_right_node(index))
     else
         _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, get_right_node(index))
-        _k_nearest_neighbour(tree, point, k,best_idxs, best_dists,  get_left_node(index))
+        _k_nearest_neighbour(tree, point, k,best_idxs, best_dists,  get_left_node(index))     
     end
 end
 # Returns the indices for all points in the tree inside a
