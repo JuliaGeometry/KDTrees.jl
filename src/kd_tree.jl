@@ -4,10 +4,11 @@ function euclidean_distance{T <: FloatingPoint}(point_1::AbstractVector{T},
                                                 point_2::AbstractVector{T})
     dist = 0.0
     for i = 1:size(point_1, 1)
-        @inbounds s += abs2(point_1[i] - point_2[i])
+        @inbounds dist += abs2(point_1[i] - point_2[i])
     end
     return dist
 end
+
 
 # Hyper rectangles are used to bound points in space.
 # For an inner node all it's children are bounded by the
@@ -62,6 +63,16 @@ immutable KDTree{T <: FloatingPoint}
   indices::Vector{Int} # Translates from a point index to the actual point in the data
 end
 
+function euclidean_distance2{T <: FloatingPoint}(tree::KDTree, idx::Int,
+                                                 point_2::AbstractVector{T})
+    dist = 0.0
+    for i = 1:size(point_2, 1)
+        @inbounds dist += abs2(tree.data[i, get_point_index(tree, idx)] - point_2[i])
+    end
+    return dist
+end
+
+
 function show(io::IO, tree::KDTree)
     print(string("KDTree from ", size(tree.data, 2), 
                  " point in ", size(tree.data, 1), " dimensions."))
@@ -74,7 +85,9 @@ get_parent_node(idx::Int) = div(idx, 2)
 get_point_index(tree::KDTree, idx::Int) = idx - tree.n_internal_nodes
 
 # From node index -> point in data
-get_point(tree::KDTree, idx::Int) = tree.data[:, tree.indices[get_point_index(tree, idx)]]
+get_point(tree::KDTree, idx::Int) = view(tree.data, :, tree.indices[get_point_index(tree, idx)])
+
+
 
 is_leaf_node(tree::KDTree, idx::Int) = idx > tree.n_internal_nodes
 
