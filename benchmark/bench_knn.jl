@@ -1,26 +1,53 @@
 using KDtree
 
-dims = 3
-n_points = [10^i for i in 3:6]
-ks = [1, 3, 10, 50, 100, 500]
 
-times = Array(Float64, length(ks), length(n_points))
+function run_bench_knn()
+    dims = 3
+    n_points = [10^i for i in 3:6]
+    ks = [1, 3, 10, 50, 100, 500]
 
-# Compile it
-tree = KDTree(randn(2,2))
-k_nearest_neighbour(tree, zeros(2), 1)
+    n_iters = 100
 
-for (i, k) in enumerate(ks)
-    for (j , n_point) in enumerate(n_points)
-        data = randn(dims, n_point)
-        tree = KDTree(data)
-        times[i,j]  = @elapsed k_nearest_neighbour(tree, zeros(dims), k)
+    times = fill(0.0, length(ks), length(n_points))
+
+    # Compile it
+    tree = KDTree(randn(2,2))
+    k_nearest_neighbour(tree, zeros(2), 1)
+
+    for (i, k) in enumerate(ks)
+        for (j , n_point) in enumerate(n_points)
+            data = rand(dims, n_point)
+            tree = KDTree(data)
+            for z in 1:n_iters
+                times[i,j]  += @elapsed k_nearest_neighbour(tree, rand(dims), k)
+            end
+            times[i,j] /= n_iters
+        end
     end
+
+    println(times)
+    return
 end
 
-println(times)
+run_bench_knn()
 
 #=
+[1.4065e-5 2.3188e-5 4.3715e-5 5.2077e-5
+ 1.6345e-5 2.3568e-5 4.8277e-5 5.854e-5
+ 3.2691e-5 5.2458e-5 6.9943e-5 7.4505e-5
+ 9.0851e-5 9.8073e-5 0.000158894 0.00014711
+ 0.000174479 0.000136466 0.00026685 0.000235679
+ 0.00074315 0.001355156 0.002210445 0.001653557]
+
+ [1.1784e-5 9.503e-6 3.9914e-5 4.5996e-5
+ 1.0263e-5 3.4972e-5 4.3715e-5 4.9417e-5
+ 1.9007e-5 3.6492e-5 5.4738e-5 9.4272e-5
+ 6.3861e-5 7.2985e-5 0.000138367 0.000130004
+ 0.000109097 0.000137227 0.000247843 0.000293079
+ 0.000719962 0.001243398 0.001625808 0.002126056]
+
+
+
 2015-02-03: ArrayViews:
 [1.3996e-5 2.1771e-5 5.1316e-5 4.4474e-5
  2.0837e-5 2.5502e-5 5.9402e-5 6.8732e-5

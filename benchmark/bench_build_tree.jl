@@ -1,22 +1,27 @@
 using KDtree
 
-dims = 1:6
-n_points = [10^i for i in 1:5]
 
-times = Array(Float64, length(dims), length(n_points))
+function run_bench_tree()
+    dims = 1:6
+    n_points = [10^i for i in 1:5]
 
-# Compile
-KDTree(randn(2,2))
+    times = Array(Float64, length(dims), length(n_points))
+
+    # Compile
+    KDTree(randn(2,2))
 
 
-for (i, dim) in enumerate(dims)
-    for (j, n_point) in enumerate(n_points)
-        data = randn(dim, n_point)
-        times[i,j]  = @elapsed KDTree(data)
+    for (i, dim) in enumerate(dims)
+        for (j, n_point) in enumerate(n_points)
+            data = rand(dim, n_point)
+            times[i,j]  = @elapsed KDTree(data)
+        end
     end
+
+    println(times)
 end
 
-println(times)
+run_bench_tree()
 
 #=
 2015-02-03: (with ArrayViews)
