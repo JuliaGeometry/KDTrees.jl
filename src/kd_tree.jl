@@ -3,8 +3,8 @@
 function euclidean_distance{T <: FloatingPoint}(point_1::AbstractVector{T},
                                                 point_2::AbstractVector{T})
     dist = 0.0
-    for i in 1:size(point_1, 1)
-        dist += (point_1[i] - point_2[i]) * (point_1[i] - point_2[i])
+    for i = 1:size(point_1, 1)
+        @inbounds s += abs2(point_1[i] - point_2[i])
     end
     return dist
 end
@@ -40,7 +40,7 @@ end
 function get_min_max_distance{T <: FloatingPoint}(rec::HyperRectangle{T}, point::Vector{T})
     min_d = zero(T)
     max_d = zero(T)
-    for dim in 1:size(point,1)
+    @inbounds for dim in 1:size(point,1)
         d1 = (rec.maxes[dim] - point[dim]) * (rec.maxes[dim] - point[dim])
         d2 = (rec.mins[dim] - point[dim]) * (rec.mins[dim] - point[dim])
         if (rec.mins[dim] > point[dim]) || (rec.maxes[dim] < point[dim]) # Point is outside
@@ -359,15 +359,3 @@ function select_spec!{T <: FloatingPoint}(v::AbstractVector, k::Int, lo::Int,
     return
 end
 
-
-#=
-# TODO: To avoid the sqrt maybe?
-function euclidean_distance_red{T <: FloatingPoint}(point_1::Array{T, 1},
-                                                    point_2::Array{T, 1})
-  dist = 0.0
-  for i in 1:size(point_1, 1)
-    dist += (point_1[i] - point_2[i]) * (point_1[i] - point_2[i])
-  end
-  return dist
-end
-=#
