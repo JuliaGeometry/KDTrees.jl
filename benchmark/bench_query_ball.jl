@@ -6,18 +6,23 @@ function run_bench_query_ball()
     n_points = [10^i for i in 3:5]
     rs = [0.1 0.2 0.3 0.4]
 
-    times = Array(Float64, length(rs), length(n_points))
+    times = fill(0.0, length(rs), length(n_points))
 
     # Compile it
+    n_iters = 1000
+
     tree = KDTree(randn(2,2))
     query_ball_point(tree, zeros(2), 0.1)
-
 
     for (i, r) in enumerate(rs)
         for (j , n_point) in enumerate(n_points)
             data = rand(dims, n_point)
             tree = KDTree(data)
-            times[i,j]  = @elapsed query_ball_point(tree, rand(dims), r)
+            for z = 1:n_iters
+            	p = rand(dims)
+            	times[i,j] += @elapsed query_ball_point(tree, p, r)
+            end
+            times[i,j] /= n_iters
         end
     end
 
@@ -25,6 +30,7 @@ function run_bench_query_ball()
 end
 
 run_bench_query_ball()
+
 
 #=
 
