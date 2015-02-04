@@ -62,6 +62,10 @@ immutable KDTree{T <: FloatingPoint}
   indices::Vector{Int} # Translates from a point index to the actual point in the data
 end
 
+function show(io::IO, tree::KDTree)
+    print(string("KDTree from ", size(tree.data, 2), 
+                 " point in ", size(tree.data, 1), " dimensions."))
+end
 
 # Helper functions to get node numbers and points
 get_left_node(idx::Int) = idx * 2
