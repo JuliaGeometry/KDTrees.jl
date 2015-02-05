@@ -234,12 +234,14 @@ function k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree, point::Vector{T},
     best_idxs = [-1 for i in 1:k]
     best_dists = [typemax(T) for i in 1:k]
 
-    _k_nearest_neighbour(tree, point, k, best_idxs, best_dists)
+    nodes_vis = [1]
+
+    _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, nodes_vis)
 
    # Convert from indices in tree to indices in data
     true_indices = [tree.indices[get_point_index(tree, x)] for x in best_idxs]
 
-    return true_indices, sqrt(best_dists)
+    return true_indices, sqrt(best_dists) #, nodes_vis
 end
 
 
@@ -248,12 +250,11 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
                                                   k::Int,
                                                   best_idxs ::Vector{Int},
                                                   best_dists::Vector{T},
+                                                  nodes_vis::Vector{Int},
                                                   index::Int=1)
 
-    min_d, max_d = get_min_max_distance(tree.hyper_recs[index], point)
-    if min_d > best_dists[k]
-       return
-    end
+    nodes_vis[1] += 1
+   
     if is_leaf_node(tree, index)
         dist_d = euclidean_distance(get_point(tree, index), point)
         if dist_d <= best_dists[k] # Closer than the currently k closest.
@@ -272,14 +273,21 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
         return
     end
 
-    dist_l = get_min_max_distance(tree.hyper_recs[get_left_node(index)], point)
-    dist_r = get_min_max_distance(tree.hyper_recs[get_right_node(index)], point)
-    if dist_l < dist_r
-        _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, get_left_node(index))
-        _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, get_right_node(index))
+     #min_d, max_d = get_min_max_distance(tree.hyper_recs[index], point)
+    if abs(point[tree.split_dims[index]] - tree.split_vals[index]) > best_dists[k]
+    #if min_d > best_dists[k]
+       return
+    end
+
+    #dist_l = get_min_max_distance(tree.hyper_recs[get_left_node(index)], point)
+    #dist_r = get_min_max_distance(tree.hyper_recs[get_right_node(index)], point)
+    if point[tree.split_dims[index]] < tree.split_vals[index]
+    #if dist_l < dist_r
+        _k_nearest_neighbour(tree, point, k, best_idxs, best_dists,nodes_vis, get_left_node(index))
+        _k_nearest_neighbour(tree, point, k, best_idxs, best_dists,nodes_vis, get_right_node(index))
     else
-        _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, get_right_node(index))
-        _k_nearest_neighbour(tree, point, k,best_idxs, best_dists,  get_left_node(index))     
+        _k_nearest_neighbour(tree, point, k, best_idxs, best_dists,nodes_vis, get_right_node(index))
+        _k_nearest_neighbour(tree, point, k,best_idxs, best_dists,nodes_vis,  get_left_node(index))     
     end
 end
 # Returns the indices for all points in the tree inside a
