@@ -1,27 +1,41 @@
 using KDtree
 
-dims = 1:6
-n_points = [10^i for i in 1:5]
 
-times = Array(Float64, length(dims), length(n_points))
+function run_bench_tree()
+    dims = 1:6
+    n_points = [10^i for i in 1:5]
 
-# Compile
-KDTree(randn(2,2))
+    times = fill(0.0, length(dims), length(n_points))
 
-i = 0
-for dim in dims
-    j = 0
-    i+=1
-    for n_point in n_points
-        j+=1
-        data = randn(dim, n_point)
-        times[i,j]  = @elapsed KDTree(data)
+    # Compile
+    KDTree(randn(2,2))
+
+    n_iters = 5
+
+    for (i, dim) in enumerate(dims)
+        for (j, n_point) in enumerate(n_points)
+            for z = 1:n_iters
+            	data = rand(dim, n_point)
+            	times[i,j] += @elapsed KDTree(data)
+        	end
+        	times[i,j] /= n_iters
+        end
     end
+
+    println(times)
 end
 
-println(times)
+run_bench_tree()
 
 #=
+2015-02-04: With type, no bounds, no views etc
+[[3.11e-6 3.2033e-5 0.000296701 0.003287041 0.08933542
+ 5.598e-6 3.2656e-5 0.000348329 0.004047143 0.049544467
+ 6.22e-6 3.6077e-5 0.000363257 0.02172358 0.058261703
+ 5.909e-6 3.8565e-5 0.000402444 0.004890908 0.080466724
+ 6.842e-6 4.0431e-5 0.000430746 0.005446367 0.093348975
+ 7.464e-6 4.3541e-5 0.000463091 0.005823931 0.103238088]
+
 2015-02-03: (with ArrayViews)
 [1.3373e-5 4.7584e-5 0.000489836 0.005438274 0.063624952
  7.775e-6 5.4737e-5 0.000640676 0.007319247 0.083582606

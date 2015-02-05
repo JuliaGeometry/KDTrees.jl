@@ -1,5 +1,7 @@
 module KDtree
 
+    import Base.show
+
     using ArrayViews
 
     export KDTree
