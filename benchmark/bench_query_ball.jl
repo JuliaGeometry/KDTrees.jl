@@ -1,27 +1,40 @@
 using KDtree
 
-dims = 3
-n_points = [10^i for i in 3:5]
-rs = [0.1 0.2 0.3 0.4]
 
-times = Array(Float64, length(rs), length(n_points))
+function run_bench_query_ball()
+    dims = 3
+    n_points = [10^i for i in 3:5]
+    rs = [0.1 0.2 0.3 0.4]
 
-# Compile it
-tree = KDTree(randn(2,2))
-query_ball_point(tree, zeros(2), 0.1)
+    times = fill(0.0, length(rs), length(n_points))
 
+    # Compile it
+    n_iters = 1000
 
-for (i, r) in enumerate(rs)
-    for (j , n_point) in enumerate(n_points)
-        data = randn(dims, n_point)
-        tree = KDTree(data)
-        times[i,j]  = @elapsed query_ball_point(tree, zeros(dims), r)
+    tree = KDTree(randn(2,2))
+    query_ball_point(tree, zeros(2), 0.1)
+
+    for (i, r) in enumerate(rs)
+        for (j , n_point) in enumerate(n_points)
+            data = rand(dims, n_point)
+            tree = KDTree(data)
+            for z = 1:n_iters
+            	p = rand(dims)
+            	times[i,j] += @elapsed query_ball_point(tree, p, r)
+            end
+            times[i,j] /= n_iters
+        end
     end
+
+    println(times)
 end
 
-println(times)
+run_bench_query_ball()
+
 
 #=
+
+
 2015-02-03: ArrayViews + no sqrt
 [1.1196e-5 1.9593e-5 7.5885e-5
  1.5239e-5 4.1986e-5 0.000167011
