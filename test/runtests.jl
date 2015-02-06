@@ -1,12 +1,15 @@
 module TestKDtree
     using FactCheck
     using Base.Test
+    using Base.Collections
+
     using KDtree
 
-    FactCheck.onlystats(true)
+    #FactCheck.onlystats(true)
 
-    include("test_kd_tree.jl")
+    include("test_knn.jl")
+    include("test_query_ball.jl")
 
-    FactCheck.exitstatus()
+    #FactCheck.exitstatus()
 
 end #module

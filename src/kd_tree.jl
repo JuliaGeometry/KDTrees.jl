@@ -250,10 +250,6 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
                                                   best_dists::Vector{T},
                                                   index::Int=1)
 
-    min_d, max_d = get_min_max_distance(tree.hyper_recs[index], point)
-    if min_d > best_dists[k]
-       return
-    end
     if is_leaf_node(tree, index)
         dist_d = euclidean_distance(get_point(tree, index), point)
         if dist_d <= best_dists[k] # Closer than the currently k closest.
@@ -272,15 +268,23 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
         return
     end
 
-    dist_l = get_min_max_distance(tree.hyper_recs[get_left_node(index)], point)
-    dist_r = get_min_max_distance(tree.hyper_recs[get_right_node(index)], point)
-    if dist_l < dist_r
-        _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, get_left_node(index))
-        _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, get_right_node(index))
+    if point[tree.split_dims[index]] < tree.split_vals[index]
+        close = get_left_node(index)
+        far = get_right_node(index)
     else
-        _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, get_right_node(index))
-        _k_nearest_neighbour(tree, point, k,best_idxs, best_dists,  get_left_node(index))     
+        far = get_left_node(index)
+        close = get_right_node(index)
     end
+    
+    _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, close)
+        
+    # Only go far node if it sphere crosses hyperplane
+    if abs2(point[tree.split_dims[index]] - tree.split_vals[index]) < best_dists[k]
+         _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, far)
+    end
+
+    return  
+
 end
 # Returns the indices for all points in the tree inside a
 # hypersphere of a given point with a given radius
@@ -371,4 +375,3 @@ function select_spec!{T <: FloatingPoint}(v::AbstractVector, k::Int, lo::Int,
     end
     return
 end
-
