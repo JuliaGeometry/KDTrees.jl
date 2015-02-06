@@ -46,10 +46,6 @@ facts("KDtree") do
             @fact idx[i] in keys(pq) => true
         end
 
-        println(pq)
-        println(idx)
-        println(dist)
-
        # 8 node rectangle
         data = [0.0 0.0 0.0 0.5 0.5 1.0 1.0 1.0;
                 0.0 0.5 1.0 0.0 1.0 0.0 0.5 1.0]
