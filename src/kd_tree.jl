@@ -254,7 +254,10 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
                                                   index::Int=1)
 
     nodes_vis[1] += 1
-   
+
+    #min_d, max_d = get_min_max_distance(tree.hyper_recs[index], point)
+    #if min_d > best_dists[k]
+
     if is_leaf_node(tree, index)
         dist_d = euclidean_distance(get_point(tree, index), point)
         if dist_d <= best_dists[k] # Closer than the currently k closest.
@@ -273,22 +276,26 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
         return
     end
 
-     #min_d, max_d = get_min_max_distance(tree.hyper_recs[index], point)
-    if abs(point[tree.split_dims[index]] - tree.split_vals[index]) > best_dists[k]
-    #if min_d > best_dists[k]
-       return
-    end
+   
 
     #dist_l = get_min_max_distance(tree.hyper_recs[get_left_node(index)], point)
     #dist_r = get_min_max_distance(tree.hyper_recs[get_right_node(index)], point)
     if point[tree.split_dims[index]] < tree.split_vals[index]
-    #if dist_l < dist_r
-        _k_nearest_neighbour(tree, point, k, best_idxs, best_dists,nodes_vis, get_left_node(index))
-        _k_nearest_neighbour(tree, point, k, best_idxs, best_dists,nodes_vis, get_right_node(index))
+        close = get_left_node(index)
+        far = get_right_node(index)
     else
-        _k_nearest_neighbour(tree, point, k, best_idxs, best_dists,nodes_vis, get_right_node(index))
-        _k_nearest_neighbour(tree, point, k,best_idxs, best_dists,nodes_vis,  get_left_node(index))     
+        far = get_left_node(index)
+        close = get_right_node(index)
     end
+    
+    _k_nearest_neighbour(tree, point, k, best_idxs, best_dists,nodes_vis, close)
+        
+    if abs2(point[tree.split_dims[index]] - tree.split_vals[index]) < best_dists[k]
+         _k_nearest_neighbour(tree, point, k, best_idxs, best_dists,nodes_vis, far)
+    end
+
+    return  
+
 end
 # Returns the indices for all points in the tree inside a
 # hypersphere of a given point with a given radius
