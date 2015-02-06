@@ -1,8 +1,8 @@
-# KDtree.jl
+# KDTrees
 
-Kd tree for Julia.
+Kd trees for Julia.
 
-[![Build Status](https://travis-ci.org/KristofferC/KDtree.jl.svg?branch=master)](https://travis-ci.org/KristofferC/KDtree.jl) [![Coverage Status](https://coveralls.io/repos/KristofferC/KDtree.jl/badge.svg)](https://coveralls.io/r/KristofferC/KDtree.jl)
+[![Build Status](https://travis-ci.org/KristofferC/KDTrees.jl.svg?branch=master)](https://travis-ci.org/KristofferC/KDTrees.jl) [![Coverage Status](https://coveralls.io/repos/KristofferC/KDTrees.jl/badge.svg)](https://coveralls.io/r/KristofferC/KDTrees.jl)
 
 Currently supports KNN-search and finding all points inside an hyper sphere centered at a given point. Currently only
 uses Euclidean distance.
@@ -18,8 +18,6 @@ Kristoffer Carlsson (@KristofferC)
 
 ## Examples
 
-In the examples, notice that the module is called `KDtree` and the actual tree type is called `KDTree`. This is because modules and types can currently not have the same name in Julia.
-
 The tree is created from a matrix of floats of dimension `(n_dim, n_points)`.
 
 ### Points inside hyper sphere
@@ -27,7 +25,7 @@ The tree is created from a matrix of floats of dimension `(n_dim, n_points)`.
 Finds all points inside an hyper sphere centered at a given point. Returns the indices of these points. 
 
 ```julia
-using KDtree
+using KDTrees
 tree = KDTree(randn(3, 1000))
 query_ball_point(tree, [0.0, 0.0, 0.0], 0.4) # All nodes closer than 0.4 of (0.0, 0.0, 0.0)
 ```
@@ -52,7 +50,7 @@ from the given points respectively. These are sorted in the order of smallest to
 The current implementation is a bit slower than it has to be for very large *k*.
 
 ```julia
-using KDtree
+using KDTrees
 tree = KDTree(randn(3, 1000))
 k_nearest_neighbour(tree, [0.0, 0.0, 0.0], 5)
 ```

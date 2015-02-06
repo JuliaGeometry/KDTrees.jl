@@ -1,4 +1,4 @@
-module KDtree
+module KDTrees
 
     import Base.show
 
