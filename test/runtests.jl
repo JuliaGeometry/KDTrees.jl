@@ -5,11 +5,11 @@ module TestKDtree
 
     using KDtree
 
-    #FactCheck.onlystats(true)
+    FactCheck.onlystats(true)
 
     include("test_knn.jl")
     include("test_query_ball.jl")
 
-    #FactCheck.exitstatus()
+    FactCheck.exitstatus()
 
 end #module
