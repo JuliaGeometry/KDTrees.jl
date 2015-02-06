@@ -2,14 +2,14 @@
 
 Kd tree for Julia.
 
-[![Build Status](https://travis-ci.org/KristofferC/KDtree.jl.svg)](https://travis-ci.org/KristofferC/KDtree.jl) [![Coverage Status](https://coveralls.io/repos/KristofferC/KDtree.jl/badge.svg)](https://coveralls.io/r/KristofferC/KDtree.jl)
+[![Build Status](https://travis-ci.org/KristofferC/KDtree.jl.svg?branch=master)](https://travis-ci.org/KristofferC/KDtree.jl) [![Coverage Status](https://coveralls.io/repos/KristofferC/KDtree.jl/badge.svg)](https://coveralls.io/r/KristofferC/KDtree.jl)
 
 Currently supports KNN-search and finding all points inside an hyper sphere centered at a given point. Currently only
 uses Euclidean distance.
 
-Some care has been taken with regards to performance. For example the tree is not implemented as nodes pointing to other nodes but instead as an ensamble of densely packed arrays. This should give better cache locality. The negative aspect of this storage method is that the tree is immutable and new data can not be entered into the tree after it has been created.
+Some care has been taken with regards to performance. For example the tree is not implemented as nodes pointing to other nodes but instead as a collection of densely packed arrays. This should give better cache locality. The negative aspect of this storage method is that the tree is immutable and new data can not be entered into the tree after it has been created.
 
-There are some benchmarks for the creation of the tree and the different searches in the benchmark folder.
+There are some benchmarks for the creation of the tree and the different searches in the benchmark folder. 
 
 Since this is a new project there are still some obvious improvements which are listed in the TODO list.
 
@@ -64,11 +64,7 @@ gives both the indices and distances:
 ### TODOs
 * Implement a leaf size argument where the sub tree stop splitting after
    only a certain number of nodes are left in the sub tree.
-* Add proper benchmarks, compare with others implementations.
+* Add proper benchmarks, compare with others implementations. Update: Partly done
 * Add other measures than Euclidean distance.
-* Use a bounded priority queue for storing the K best points in KNN instead of a linear array (should only matter for large K).
-* Proper investigation of memory allocations and where time is spent.
-* Throw errors at dimension mismatch in the functions etc.
-
-
-
+* Use a bounded priority queue for storing the K best points in KNN instead of a linear array (should only matter for large K). 
+  Julias built in PQ is slower than a normal array

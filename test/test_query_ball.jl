@@ -1,40 +1,5 @@
 facts("KDtree") do
 
-    context("KDtree.nearest_neighbour") do
-
-        dim_data = 3
-        size_data = 1000
-        data = randn(dim_data, size_data )
-
-        tree = KDTree(data)
-
-        # Checking that we find existing points
-        for i = 1:20
-            n = rand(1:size_data)
-            idx, dist = k_nearest_neighbour(tree, data[:,n], 1)
-            @fact n => idx[1]
-            @fact KDtree.euclidean_distance(data[:,idx[1]], data[:, n]) => roughly(0.0)
-        end
-
-
-
-       # 8 node rectangle
-        data = [0.0 0.0 0.0 0.5 0.5 1.0 1.0 1.0;
-                0.0 0.5 1.0 0.0 1.0 0.0 0.5 1.0]
-        tree = KDTree(data)
-
-        idxs, dists = k_nearest_neighbour(tree, [0.8, 0.8], 1)
-        @fact idxs[1] => 8 # Should be closest to top right corner
-        @fact sqrt(0.2^2 + 0.2^2) => roughly(dists[1])
-
-        idxs, dists = k_nearest_neighbour(tree, [0.1, 0.8], 3)
-        @fact idxs => [3, 2, 5]
-
-        @fact_throws k_nearest_neighbour(tree, [0.1, 0.8], 10) # k > n_points
-
-        @fact_throws k_nearest_neighbour(tree, [0.1], 10) # n_dim != trees dim
-    end  #context
-
     context("KDtree.ball_query") do
 
         data = [0.0 0.0 0.0 0.0 1.0 1.0 1.0 1.0;
@@ -56,8 +21,32 @@ facts("KDtree") do
         @fact idxs => [1, 2, 3, 4, 5, 6, 7, 8] #
 
         @fact_throws query_ball_poin(tree, [0.1], 1.0) # n_dim != trees dim
+
+
+        idx = Int[]
+        dim_data = 3
+        size_data = 100
+        data = rand(dim_data, size_data)
+        tree = KDTree(data)
+        p = zeros(dim_data)
+        r = 0.3
+        # Brute force
+        for n in 1:size_data
+            d = sqrt(KDtree.euclidean_distance([data[:,n]], p))
+            if d <= r # Closer than the currently k closest.
+                push!(idx, n)
+            end
+        end
+
+        q_idxs = query_ball_point(tree, p, r)
+
+        for i in 1:length(idx)
+            @fact q_idxs[i] in idx => true
+        end
+
     end #context
 
+    
     context("KDtree.yolo_testing") do
 
         # Tests that the n-points in a random hyper sphere around
@@ -82,4 +71,5 @@ facts("KDtree") do
             @fact idxs_ball[i] in idxs_knn => true
         end
     end #context
+    
 end # facts
