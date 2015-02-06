@@ -1,4 +1,4 @@
-using KDtree
+using KDTrees
 
 
 function run_bench_tree()

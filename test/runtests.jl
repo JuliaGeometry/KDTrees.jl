@@ -1,9 +1,9 @@
-module TestKDtree
+module TestKDTrees
     using FactCheck
     using Base.Test
     using Base.Collections
 
-    using KDtree
+    using KDTrees
 
     FactCheck.onlystats(true)
 

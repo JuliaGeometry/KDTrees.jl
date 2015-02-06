@@ -1,6 +1,6 @@
-facts("KDtree") do
+facts("KDTrees") do
 
-    context("KDtree.nearest_neighbour") do
+    context("KDTrees.nearest_neighbour") do
 
         dim_data = 3
         size_data = 1000
@@ -13,7 +13,7 @@ facts("KDtree") do
             n = rand(1:size_data)
             idx, dist = k_nearest_neighbour(tree, data[:,n], 1)
             @fact n => idx[1]
-            @fact KDtree.euclidean_distance(data[:,idx[1]], data[:, n]) => roughly(0.0)
+            @fact KDTrees.euclidean_distance(data[:,idx[1]], data[:, n]) => roughly(0.0)
         end
 
         # Check results vs brute force
@@ -33,7 +33,7 @@ facts("KDtree") do
 
         # Brute force
         for n in 1:size_data
-            d = sqrt(KDtree.euclidean_distance(data[:,n], p))
+            d = sqrt(KDTrees.euclidean_distance(data[:,n], p))
             if d <= peek(pq)[2] # Closer than the currently k closest.
                 dequeue!(pq)
                 enqueue!(pq, n, d)

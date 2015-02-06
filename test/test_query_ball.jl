@@ -1,6 +1,6 @@
-facts("KDtree") do
+facts("KDTrees") do
 
-    context("KDtree.ball_query") do
+    context("KDTrees.ball_query") do
 
         data = [0.0 0.0 0.0 0.0 1.0 1.0 1.0 1.0;
                 0.0 0.0 1.0 1.0 0.0 0.0 1.0 1.0;
@@ -32,7 +32,7 @@ facts("KDtree") do
         r = 0.3
         # Brute force
         for n in 1:size_data
-            d = sqrt(KDtree.euclidean_distance([data[:,n]], p))
+            d = sqrt(KDTrees.euclidean_distance([data[:,n]], p))
             if d <= r # Closer than the currently k closest.
                 push!(idx, n)
             end
@@ -47,7 +47,7 @@ facts("KDtree") do
     end #context
 
     
-    context("KDtree.yolo_testing") do
+    context("KDTrees.yolo_testing") do
 
         # Tests that the n-points in a random hyper sphere around
         # a random point are all the n-closest points to that point.... yeah

@@ -1,5 +1,4 @@
-using KDtree
-
+using KDTrees
 
 function run_bench_query_ball()
     dims = 3
