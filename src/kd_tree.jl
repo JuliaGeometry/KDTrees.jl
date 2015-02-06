@@ -234,14 +234,12 @@ function k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree, point::Vector{T},
     best_idxs = [-1 for i in 1:k]
     best_dists = [typemax(T) for i in 1:k]
 
-    nodes_vis = [1]
-
-    _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, nodes_vis)
+    _k_nearest_neighbour(tree, point, k, best_idxs, best_dists)
 
    # Convert from indices in tree to indices in data
     true_indices = [tree.indices[get_point_index(tree, x)] for x in best_idxs]
 
-    return true_indices, sqrt(best_dists) #, nodes_vis
+    return true_indices, sqrt(best_dists)
 end
 
 
@@ -250,13 +248,7 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
                                                   k::Int,
                                                   best_idxs ::Vector{Int},
                                                   best_dists::Vector{T},
-                                                  nodes_vis::Vector{Int},
                                                   index::Int=1)
-
-    nodes_vis[1] += 1
-
-    #min_d, max_d = get_min_max_distance(tree.hyper_recs[index], point)
-    #if min_d > best_dists[k]
 
     if is_leaf_node(tree, index)
         dist_d = euclidean_distance(get_point(tree, index), point)
@@ -276,10 +268,6 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
         return
     end
 
-   
-
-    #dist_l = get_min_max_distance(tree.hyper_recs[get_left_node(index)], point)
-    #dist_r = get_min_max_distance(tree.hyper_recs[get_right_node(index)], point)
     if point[tree.split_dims[index]] < tree.split_vals[index]
         close = get_left_node(index)
         far = get_right_node(index)
@@ -288,10 +276,11 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
         close = get_right_node(index)
     end
     
-    _k_nearest_neighbour(tree, point, k, best_idxs, best_dists,nodes_vis, close)
+    _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, close)
         
+    # Only go far node if it sphere crosses hyperplane
     if abs2(point[tree.split_dims[index]] - tree.split_vals[index]) < best_dists[k]
-         _k_nearest_neighbour(tree, point, k, best_idxs, best_dists,nodes_vis, far)
+         _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, far)
     end
 
     return  
@@ -386,4 +375,3 @@ function select_spec!{T <: FloatingPoint}(v::AbstractVector, k::Int, lo::Int,
     end
     return
 end
-
