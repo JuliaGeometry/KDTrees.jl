@@ -174,8 +174,8 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
         # Find max and min in this dim
 
       for coordinate in 1:n_points
-        xmin = min(xmin, data[dim, perm[coordinate]])
-        xmax = max(xmax, data[dim, perm[coordinate]])
+        xmin = min(xmin, data[dim, perm[coordinate + low - 1]])
+        xmax = max(xmax, data[dim, perm[coordinate + low - 1]])
       end
 
       if xmax - xmin > max_spread # Found new max_spread, update split dimension
