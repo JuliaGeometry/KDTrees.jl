@@ -47,7 +47,7 @@ gives the indices:
 Finds the *k* nearest neighbours to a given point. Returns a tuple of two lists with the indices and the distances
 from the given points respectively. These are sorted in the order of smallest to largest distance.
 
-The current implementation is a bit slower than it has to be for very large *k*.
+The current implementation is a bit slower than it has to be for large *k*.
 
 ```julia
 using KDTrees
@@ -59,16 +59,15 @@ gives both the indices and distances:
 ([300,119,206,180,845],[0.052019,0.200885,0.220441,0.22447,0.235882])
 ```
 
-## Benchmark
+## Benchmarks
 
 Clicking on a plot takes you to the Plotly site for the plot where the exact data can be seen.
 
-
-## KNNbenchmark
+### KNN benchmark
 
 [![bench_knn](https://github.com/KristofferC/KDTrees.jl/raw/master/benchmark/knn_search_speed_dim_3.png)](https://plot.ly/~kcarlsson89/22/knn-search-speed-dim-3/)
 
-## Build time benchmark
+### Build time benchmark
 
 [![bench_knn](https://github.com/KristofferC/KDTrees.jl/raw/master/benchmark/build_time_for_kdtree_dim_3.png)](https://plot.ly/~kcarlsson89/70/build-time-for-kdtree-dim-3/)
 
@@ -82,4 +81,6 @@ Clicking on a plot takes you to the Plotly site for the plot where the exact dat
 
 ### Contribution
 
-Contributions are more than welcome. If you have 
+Contributions are more than welcome. If you have an idea that would make the tree have better 
+performance or be more general please create a PR. Make sure you run the benchmarks before and
+after your changes.
