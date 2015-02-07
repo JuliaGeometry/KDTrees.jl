@@ -1,63 +1,111 @@
 using KDTrees
+using StatsBase
 
+function run_bench_build_tree(dim, knn, exps, rounds)
+    println("Running build tree benchmark for 10^(", exps, ") points in ", dim, " dimensions.")
+    n_points = [10^i for i in exps]
 
-function run_bench_tree()
-    dims = 1:6
-    n_points = [10^i for i in 1:5]
+    times = zeros(length(n_points), rounds)
 
-    times = fill(0.0, length(dims), length(n_points))
+    # Compile it
+    tree = KDTree(randn(2,2))
+    k_nearest_neighbour(tree, zeros(2), 1)
 
-    # Compile
-    KDTree(randn(2,2))
-
-    n_iters = 5
-
-    for (i, dim) in enumerate(dims)
-        for (j, n_point) in enumerate(n_points)
-            for z = 1:n_iters
-            	data = rand(dim, n_point)
-            	times[i,j] += @elapsed KDTree(data)
-        	end
-        	times[i,j] /= n_iters
+    timer = 0.0
+    for (i, n_point) in enumerate(n_points)
+        for (j , round) in enumerate(1:rounds)
+            n_iters = 5
+            println("Round ", j, " out of ", rounds, " for ", dim, "x", n_point, "...")
+            while true
+                timer = time_ns()
+                for k in 1:n_iters
+                  data = rand(dim, int(n_point))
+                  tree = KDTree(data)
+                end
+                timer = (time_ns() - float(timer)) / 10^9 # To seconds
+                if timer < 1.0
+                    n_iters *= 3
+                    continue
+                end
+                break # Break this round
+            end
+        times[i, j] = timer / n_iters
         end
     end
-
-    println(times)
+    println("Done!")
+    return mean_and_std(times, 2)
 end
 
-run_bench_tree()
+dim = 3
+knn = 5
+exps = 1:0.5:6
+rounds = 3
+
+times, stds = run_bench_build_tree(dim, knn, exps, rounds)
+times = vec(times)
+stds = vec(stds)
+# Plotting
+####################
+stderr = stds / sqrt(length(stds))
+ymins = times - 1.96*stderr
+ymaxs = times + 1.96*stderr
+sizes = [10.0^i::Float64 for i in exps]
+
+
+# Plotting
+#=
+using Plotly
+data = [
+  [
+    "x" => sizes,
+    "y" => times,
+    "type" => "scatter",
+    "mode" => "lines+markers",
+    "error_y" => [
+        "type" => "data",
+        "array" => stderr*1.96*2,
+        "visible" => true
+      ]
+    ]
+]
+
+layout = [
+  "title" => "Build time for KDTree (dim = 3)",
+  "xaxis" => [
+      "title" => "Number of points",
+      "type" => "log"
+  ],
+  "yaxis" => [
+      "title" => "Build time [s]",
+      "type" => "log"
+  ],
+  "type" => "log",
+  "autorange" => true
+]
+
+
+Plotly.signin("kcarlsson89", "lolololoololololo")
+
+
+response = Plotly.plot(data, ["layout" => layout,
+                              "filename" => "bench_build",
+                              "fileopt" => "overwrite"])
+plot_url = response["url"]
+=#
+
 
 #=
-2015-02-04: With type, no bounds, no views etc
-[[3.11e-6 3.2033e-5 0.000296701 0.003287041 0.08933542
- 5.598e-6 3.2656e-5 0.000348329 0.004047143 0.049544467
- 6.22e-6 3.6077e-5 0.000363257 0.02172358 0.058261703
- 5.909e-6 3.8565e-5 0.000402444 0.004890908 0.080466724
- 6.842e-6 4.0431e-5 0.000430746 0.005446367 0.093348975
- 7.464e-6 4.3541e-5 0.000463091 0.005823931 0.103238088]
-
-2015-02-03: (with ArrayViews)
-[1.3373e-5 4.7584e-5 0.000489836 0.005438274 0.063624952
- 7.775e-6 5.4737e-5 0.000640676 0.007319247 0.083582606
- 8.087e-6 8.8015e-5 0.000739576 0.008121957 0.124985771
- 8.086e-6 6.5001e-5 0.000745174 0.00840684 0.119056416
- 8.397e-6 6.8733e-5 0.000790892 0.024885876 0.140038217
- 1.0574e-5 7.5575e-5 0.000862734 0.009941973 0.131831977]
-
-2015-02-02: (with new select!)
-[1.6794e-5 6.0335e-5 0.000620148 0.007069198 0.103463751
- 1.4306e-5 7.8995e-5 0.000901299 0.010201042 0.15665534
- 1.555e-5 8.5528e-5 0.000956037 0.011532464 0.162782185
- 1.5239e-5 9.4857e-5 0.001112474 0.01683234 0.182989888
- 1.6794e-5 0.000107609 0.001225991 0.014654978 0.21553432
- 1.7727e-5 0.000124714 0.00143872 0.017477369 0.240441345]
+using Gadfly
+p = plot(x = sizes, y = times,  Geom.point, Geom.line, Geom.errorbar, Scale.x_log10, Scale.y_log10,
+         ymin = ymins,
+         ymax = ymaxs,
+         Guide.xticks(ticks=collect(exps)),
+         Guide.xlabel("Number of points"),
+         Guide.ylabel("Build time [s]"),
+         Guide.title("Build time for KDTree (dim = 3)"))
+g = render(p)
+img = PNG("build_plot.png", 5inch, 4inch)
+draw(img, g)
+=#
 
 
-2015-02-01:
-[4.6477e-5 0.000318537 0.004562246 0.054535408 0.796257552
- 2.8026e-5 0.000350114 0.00443035 0.076212208 0.952349006
- 2.895e-5 0.000329126 0.004856197 0.059021987 0.916525079
- 3.1511e-5 0.000360546 0.004838845 0.075776018 0.921683179
- 2.9422e-5 0.000347066 0.004848977 0.078650667 0.961300694
- 3.1327e-5 0.00036603 0.005024072 0.080929123 0.992533382]
- =#
