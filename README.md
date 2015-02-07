@@ -59,10 +59,27 @@ gives both the indices and distances:
 ([300,119,206,180,845],[0.052019,0.200885,0.220441,0.22447,0.235882])
 ```
 
-### TODOs
+## Benchmark
+
+Clicking on a plot takes you to the Plotly site for the plot where the exact data can be seen.
+
+
+## KNNbenchmark
+
+[![bench_knn](https://github.com/KristofferC/KDTrees.jl/raw/master/benchmark/knn_search_speed_dim_3.png)](https://plot.ly/~kcarlsson89/22/knn-search-speed-dim-3/)
+
+## Build time benchmark
+
+[![bench_knn](https://github.com/KristofferC/KDTrees.jl/raw/master/benchmark/build_time_for_kdtree_dim_3.png)](https://plot.ly/~kcarlsson89/70/build-time-for-kdtree-dim-3/)
+
+
+## TODOs
 * Implement a leaf size argument where the sub tree stop splitting after
    only a certain number of nodes are left in the sub tree.
 * Add proper benchmarks, compare with others implementations. Update: Partly done
 * Add other measures than Euclidean distance.
-* Use a bounded priority queue for storing the K best points in KNN instead of a linear array (should only matter for large K). 
-  Julias built in PQ is slower than a normal array
+* Use a bounded priority queue for storing the K best points in KNN instead of a linear array (should only matter for large K). Julias built in PQ is slower than a normal array
+
+### Contribution
+
+Contributions are more than welcome. If you have 
