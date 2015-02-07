@@ -69,7 +69,7 @@ Clicking on a plot takes you to the Plotly site for the plot where the exact dat
 
 ### Build time benchmark
 
-[![bench_knn](https://github.com/KristofferC/KDTrees.jl/raw/master/benchmark/build_time_for_kdtree_dim_3.png)](https://plot.ly/~kcarlsson89/70/build-time-for-kdtree-dim-3/)
+[![bench_knn](https://github.com/KristofferC/KDTrees.jl/raw/master/benchmark/build_time_for_kdtree_dim_3.png)](https://plot.ly/~kcarlsson89/93/build-time-for-kdtree-dim-3/)
 
 
 ## TODOs
