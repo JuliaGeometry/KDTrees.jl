@@ -17,7 +17,7 @@ function run_bench_knn_points(dim, knn, exps, rounds)
             n_iters = 100
             println("Round ", j, " out of ", rounds, " for ", dim, "x", n_point, "...")
             data = rand(dim, int(n_point))
-            tree = KDTree(data)
+            tree = KDTree(data, 15)
             while true
                 timer = time_ns()
                 for k in 1:n_iters
@@ -68,7 +68,7 @@ for knn in [1, 5, 10]
   push!(data, trace)
 end
 
-#=
+
 # Plotting
 ####################
 
@@ -93,7 +93,7 @@ response = Plotly.plot(data, ["layout" => layout,
                               "filename" => "plotly-log-axes",
                               "fileopt" => "overwrite"])
 plot_url = response["url"]
-=#
+
 
 #=
 p = plot(x = sizes, y = speeds,  Geom.point, Geom.line, Geom.errorbar, Scale.x_log10, Scale.y_log10,
