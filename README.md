@@ -18,33 +18,42 @@ Kristoffer Carlsson (@KristofferC)
 
 ## Examples
 
-The tree is created from a matrix of floats of dimension `(n_dim, n_points)`.
+### Creating the tree
+
+The tree is created with the command:
+```julia
+using KDTrees
+data = rand(3,10^3)
+tree = KDTree(data, leaf_size=15)
+```
+The `data` argument for the tree should be a matrix of floats of dimension `(n_dim, n_points)`. The `leaf_size` determines for what number of points the tree should stop splitting. 15 is a good number and is also the default value.
 
 ### Points inside hyper sphere
 
-Finds all points inside an hyper sphere centered at a given point. Returns the indices of these points. 
+Finds all points inside an hyper sphere centered at a given point. This is done with the exported function `query_ball_point(tree, point, radius)`. Returns the sorted indices of these points. 
 
 ```julia
 using KDTrees
 tree = KDTree(randn(3, 1000))
-query_ball_point(tree, [0.0, 0.0, 0.0], 0.4) # All nodes closer than 0.4 of (0.0, 0.0, 0.0)
+query_ball_point(tree, [0.0, 0.0, 0.0], 0.4)
 ```
 gives the indices:
 ```
 8-element Array{Int64,1}:
- 206
- 180
- 119
+ 184
  199
- 300
- 186
- 845
- 161
+ 307
+ 586
+ 646
+ 680
+ 849
+ 906
+ 926
 ```
 
 ### K-Nearest-Neighbours
 
-Finds the *k* nearest neighbours to a given point. Returns a tuple of two lists with the indices and the distances
+Finds the *k* nearest neighbours to a given point. his is done with the exported function `k_nearest_neighbour((tree, point, k)`. Returns a tuple of two lists with the indices and the distances
 from the given points respectively. These are sorted in the order of smallest to largest distance.
 
 The current implementation is a bit slower than it has to be for large *k*.
@@ -65,7 +74,7 @@ Clicking on a plot takes you to the Plotly site for the plot where the exact dat
 
 ### KNN benchmark
 
-[![bench_knn](https://github.com/KristofferC/KDTrees.jl/raw/master/benchmark/knn_search_speed_dim_3.png)](https://plot.ly/~kcarlsson89/22/knn-search-speed-dim-3/)
+[![bench_knn](https://github.com/KristofferC/KDTrees.jl/raw/master/benchmark/knn_search_speed_dim_3.png)](https://plot.ly/~kcarlsson89/133/)
 
 ### Build time benchmark
 
@@ -73,11 +82,9 @@ Clicking on a plot takes you to the Plotly site for the plot where the exact dat
 
 
 ## TODOs
-* Implement a leaf size argument where the sub tree stop splitting after
-   only a certain number of nodes are left in the sub tree.
 * Add proper benchmarks, compare with others implementations. Update: Partly done
 * Add other measures than Euclidean distance.
-* Use a bounded priority queue for storing the K best points in KNN instead of a linear array (should only matter for large K). Julias built in PQ is slower than a normal array
+* Use a bounded priority queue for storing the K best points in KNN instead of a linear array (should only matter for large K). Julias built in PQ is slower than a normal array. 
 
 ### Contribution
 
