@@ -74,12 +74,11 @@ Clicking on a plot takes you to the Plotly site for the plot where the exact dat
 
 ### KNN benchmark
 
-[![bench_knn](https://plot.ly/~kcarlsson89/168.png)](https://plot.ly/~kcarlsson89/168/)
+[![bench_knn](https://plot.ly/~kcarlsson89/164.png)](https://plot.ly/~kcarlsson89/164/)
 
 ### Build time benchmark
 
-[![bench_knn](https://plot.ly/~kcarlsson89/164.png)](https://plot.ly/~kcarlsson89/164/)
-
+[![bench_knn](https://plot.ly/~kcarlsson89/168.png)](https://plot.ly/~kcarlsson89/168/)
 
 ## TODOs
 * Add proper benchmarks, compare with others implementations. Update: Partly done
