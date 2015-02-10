@@ -74,11 +74,11 @@ Clicking on a plot takes you to the Plotly site for the plot where the exact dat
 
 ### KNN benchmark
 
-[![bench_knn](https://plot.ly/~kcarlsson89/168.png)](https://plot.ly/~kcarlsson89/133/)
+[![bench_knn](https://plot.ly/~kcarlsson89/168.png)](https://plot.ly/~kcarlsson89/168/)
 
 ### Build time benchmark
 
-[![bench_knn](https://plot.ly/~kcarlsson89/164.png)](https://plot.ly/~kcarlsson89/93/build-time-for-kdtree-dim-3/)
+[![bench_knn](https://plot.ly/~kcarlsson89/164.png)](https://plot.ly/~kcarlsson89/164/)
 
 
 ## TODOs
