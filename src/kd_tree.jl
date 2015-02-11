@@ -1,3 +1,4 @@
+module KD
 function euclidean_distance{T <: FloatingPoint}(point_1::AbstractVector{T},
                                                 point_2::AbstractVector{T})
     dist = 0.0
@@ -58,20 +59,8 @@ immutable KDTree{T <: FloatingPoint}
   split_vals::Vector{T} # what values we split the tree at for a given internal node
   split_dims::Vector{Int} # what dimension we split the tree for a given internal node
   indices::Vector{Int} # Translates from a point index to the actual point in the data
-  start_idxs::Vector{Int}
-  end_idxs::Vector{Int}
-  is_leafs::Vector{Bool}
+  leaf_size::Int
 end
-
-function euclidean_distance2{T <: FloatingPoint}(tree::KDTree, idx::Int,
-                                                 point_2::AbstractVector{T})
-    dist = 0.0
-    for i = 1:size(point_2, 1)
-        @inbounds dist += abs2(tree.data[i, get_point_index(tree, idx)] - point_2[i])
-    end
-    return dist
-end
-
 
 function show(io::IO, tree::KDTree)
     print(io, string("KDTree from ", size(tree.data, 2),
@@ -108,12 +97,17 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T},
     # Took the formula below from scikits implementation
     n_nodes = 2^(ifloor(max(1,log2( (n_points - 1) / leaf_size))) + 1) - 1
 
+    n_leaf_nodes =  iceil(n_points / leaf_size)
+    n_internal_nodes = n_leaf_nodes - 1
+    #k = ifloor(log2(n_leafs)) # First row with leaf nodes
+
+
     indices = collect(1:n_points)
-    split_vals = Array(T, n_nodes)
-    split_dims = Array(Int, n_nodes) # 128 dimensions should be enough
-    start_idxs = Array(Int, n_nodes)
-    end_idxs = Array(Int, n_nodes)
-    is_leafs = Array(Bool, n_nodes)
+    split_vals = Array(T, n_points)
+    split_dims = Array(Int, n_internal_nodes) # 128 dimensions should be enough
+    #start_idxs = Array(Int, n_nodes)
+    #end_idxs = Array(Int, n_nodes)
+    #is_leafs = Array(Bool, n_nodes)
     hyper_recs = Array(HyperRectangle{T}, n_nodes)
 
     # Create first bounding hyper rectangle
@@ -137,13 +131,12 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T},
     # Call the recursive KDTree builder
     build_KDTree(1, data, split_vals,
                  split_dims, hyper_recs,
-                 indices, start_idxs, end_idxs, is_leafs,
+                 indices, leaf_size,
                   low, high)
 
 
     KDTree(data, hyper_recs,
-           split_vals, split_dims, indices, start_idxs,
-           end_idxs, is_leafs)
+           split_vals, split_dims, indices, leaf_size)
   end
 
 
@@ -158,29 +151,37 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
                                           split_dims::Vector{Int},
                                           hyper_recs::Vector{HyperRectangle{T}},
                                           indices::Vector{Int},
-                                          start_idxs::Vector{Int},
-                                          end_idxs::Vector{Int},
-                                          is_leafs::Vector{Bool},
+                                          leaf_size::Int,
                                           low::Int,
                                           high::Int)
 
-    n_nodes = length(split_dims)
-
-
+    #n_internal_nodes = length(split_dims)   
     n_points = high - low + 1 # Points left
-    n_dim = size(data, 1)
+    #println("n_points", n_points)
 
-    if get_right_node(index) > n_nodes
-        is_leafs[index] = true
-        start_idxs[index] = low
-        end_idxs[index] = high
+    if n_points <= leaf_size
+        println(index)
         return
     end
 
-    is_leafs[index] = false
 
+    # The number of leafs we have to fix
+    n_leafs = iceil(n_points / leaf_size)
+
+    k = ifloor(log2(n_leafs)) # First row with leaf nodes
+    # Number of leftover nodes needed
+    rest = n_leafs - 2^k
+
+    if k == 0
+        mid_idx = 1
+    elseif  rest > 2^(k-1)
+        mid_idx = 2^k*leaf_size + low
+    else
+        mid_idx = n_points - 2^(k-1)*leaf_size + low
+    end
 
     # Find the dimension where we have the largest spread.
+    n_dim = size(data, 1)
     split_dim = -1
     max_spread = zero(T)
     for dim in 1:n_dim
@@ -199,19 +200,14 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
         end
     end
 
+    #println("low ", low)
+    #println("high ", high)
+    #println("index ", index)
+    #println("mid_idx ", mid_idx)
+
     split_dims[index] = split_dim
 
-    # Decide where to split
-    # k = floor(Integer, log2(n_points)) # for v 0.4
-    k = ifloor(log2(n_points)) # <- deprecated in v 0.4
-    rest = n_points - 2^k
-
-    if rest > 2^(k-1)
-        mid_idx = 2^k + low
-    else
-        mid_idx = 2^(k-1) + rest + low
-    end
-
+   
     # select! works like n_th element in c++
     # sorts the points in the maximum spread dimension s.t
     # data[split_dim, a]) < data[split_dim, b]) for all a > mid_idx, b > mid_idx
@@ -221,17 +217,17 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
     split_vals[index] = split
 
     # Create the hyper rectangles for the children
-    hyper_rec_1, hyper_rec_2 = split_hyper_rec(hyper_recs[index], split_dim, split)
-    hyper_recs[get_left_node(index)] = hyper_rec_1
-    hyper_recs[get_right_node(index)] = hyper_rec_2
+    #hyper_rec_1, hyper_rec_2 = split_hyper_rec(hyper_recs[index], split_dim, split)
+    #hyper_recs[get_left_node(index)] = hyper_rec_1
+    #hyper_recs[get_right_node(index)] = hyper_rec_2
 
     build_KDTree(get_left_node(index), data,
                   split_vals, split_dims, hyper_recs,
-                   indices, start_idxs, end_idxs, is_leafs, low, mid_idx - 1)
+                   indices, leaf_size, low, mid_idx - 1)
 
     build_KDTree(get_right_node(index), data,
                   split_vals, split_dims, hyper_recs,
-                  indices,start_idxs, end_idxs, is_leafs, mid_idx, high)
+                  indices, leaf_size, mid_idx, high)
 end
 
 
@@ -407,4 +403,5 @@ function select_spec!{T <: FloatingPoint}(v::AbstractVector, k::Int, lo::Int,
         end
     end
     return
+end
 end
