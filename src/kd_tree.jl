@@ -63,16 +63,6 @@ immutable KDTree{T <: FloatingPoint}
   is_leafs::Vector{Bool}
 end
 
-function euclidean_distance2{T <: FloatingPoint}(tree::KDTree, idx::Int,
-                                                 point_2::AbstractVector{T})
-    dist = 0.0
-    for i = 1:size(point_2, 1)
-        @inbounds dist += abs2(tree.data[i, get_point_index(tree, idx)] - point_2[i])
-    end
-    return dist
-end
-
-
 function show(io::IO, tree::KDTree)
     print(io, string("KDTree from ", size(tree.data, 2),
                  " point in ", size(tree.data, 1), " dimensions."))
@@ -106,7 +96,12 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T},
     end
 
     # Took the formula below from scikits implementation
-    n_nodes = 2^(ifloor(max(1,log2( (n_points - 1) / leaf_size))) + 1) - 1
+     if Base.VERSION >= v"0.4.0-dev"
+        n_nodes = 2^(floor(Integer, max(1,log2( (n_points - 1) / leaf_size))) + 1) - 1
+    else
+        n_nodes = 2^(ifloor(max(1,log2( (n_points - 1) / leaf_size))) + 1) - 1
+    end
+    
 
     indices = collect(1:n_points)
     split_vals = Array(T, n_nodes)
@@ -202,8 +197,11 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
     split_dims[index] = split_dim
 
     # Decide where to split
-    # k = floor(Integer, log2(n_points)) # for v 0.4
-    k = ifloor(log2(n_points)) # <- deprecated in v 0.4
+    if Base.VERSION >= v"0.4.0-dev"
+        k = floor(Integer, log2(n_points))
+    else
+        k = ifloor(log2(n_points)) 
+    end
     rest = n_points - 2^k
 
     if rest > 2^(k-1)
