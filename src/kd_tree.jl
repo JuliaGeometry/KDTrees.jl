@@ -84,7 +84,7 @@ get_point(tree::KDTree, idx::Int) = view(tree.data, :, tree.indices[get_point_in
 
 # Constructor for KDTree
 function KDTree{T <: FloatingPoint}(data::Matrix{T},
-                                    leaf_size::Int = 1)
+                                    leaf_size::Int = 15)
 
     n_dim, n_points = size(data)
 
