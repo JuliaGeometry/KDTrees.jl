@@ -8,7 +8,7 @@ module TestKDTrees
     FactCheck.onlystats(true)
 
     include("test_knn.jl")
-    include("test_query_ball.jl")
+    #include("test_query_ball.jl")
 
     FactCheck.exitstatus()
 
