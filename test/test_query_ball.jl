@@ -14,6 +14,12 @@ facts("KDTrees") do
         idxs = query_ball_point(tree, [0.0, 0.0, 0.5], 0.6)
         @fact idxs => [1, 2] # Corner 1 and 2 at least 0.6 distance away from [0.0, 0.0, 0.5]
 
+        idxs = query_ball_point(tree, [0, 0, 0], 0.6)
+        @fact idxs => [1]
+
+        idxs = query_ball_point(tree, [1//3, 1//3, 1//3], 1)
+        @fact idxs => [1, 2, 3, 5]
+
         idxs = query_ball_point(tree, [0.5, 0.5, 0.5], 0.2)
         @fact idxs => [] #
 
@@ -46,7 +52,7 @@ facts("KDTrees") do
 
     end #context
 
-    
+
     context("KDTrees.yolo_testing") do
 
         # Tests that the n-points in a random hyper sphere around
@@ -71,5 +77,5 @@ facts("KDTrees") do
             @fact idxs_ball[i] in idxs_knn => true
         end
     end #context
-    
+
 end # facts

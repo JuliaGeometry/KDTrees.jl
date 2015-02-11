@@ -96,12 +96,9 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T},
     end
 
     # Took the formula below from scikits implementation
-     if Base.VERSION >= v"0.4.0-dev"
-        n_nodes = 2^(floor(Integer, max(1,log2( (n_points - 1) / leaf_size))) + 1) - 1
-    else
-        n_nodes = 2^(ifloor(max(1,log2( (n_points - 1) / leaf_size))) + 1) - 1
-    end
-    
+
+    n_nodes = 2^(floor(Integer, max(1,log2( (n_points - 1) / leaf_size))) + 1) - 1
+
 
     indices = collect(1:n_points)
     split_vals = Array(T, n_nodes)
@@ -197,11 +194,8 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
     split_dims[index] = split_dim
 
     # Decide where to split
-    if Base.VERSION >= v"0.4.0-dev"
-        k = floor(Integer, log2(n_points))
-    else
-        k = ifloor(log2(n_points)) 
-    end
+    k = floor(Integer, log2(n_points))
+
     rest = n_points - 2^k
 
     if rest > 2^(k-1)
@@ -324,6 +318,9 @@ function query_ball_point{T <: FloatingPoint}(tree::KDTree,
     return idx_in_ball
 end
 
+# allow other real numbers but convert them to float
+query_ball_point{P<:Real,R<:Real}(tree::KDTree, point::Vector{P}, radius::R) =
+  query_ball_point(tree, float(point), float(radius))
 
 # Explicitly check the distance between leaf node and point
 function traverse_check{T <: FloatingPoint}(tree::KDTree,
