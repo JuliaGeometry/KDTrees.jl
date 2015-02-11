@@ -99,7 +99,7 @@ is_leaf_node(tree::KDTree, idx::Int) = idx > tree.n_internal_nodes
 
 # Constructor for KDTree
 function KDTree{T <: FloatingPoint}(data::Matrix{T},
-                                    leaf_size::Int = 1)
+                                    leaf_size::Int = 15)
 
     n_dim, n_points = size(data)
 
