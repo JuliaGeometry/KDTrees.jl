@@ -1,5 +1,4 @@
-
-module KD
+#module KD
 function euclidean_distance{T <: FloatingPoint}(point_1::AbstractVector{T},
                                                 point_2::AbstractVector{T})
     dist = 0.0
@@ -220,17 +219,17 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
     # Number of leftover nodes needed
     rest = n_leafs - 2^k
 
+    nfull = 2^k
+
+    n_rest = n_leafs - nfull
+
     if k == 0
         mid_idx = low
-    elseif n_points < 2*leaf_size
-        mid_idx = leaf_size + low
-    elseif  rest > 2^(k-1) || rest == 0
-        mid_idx = 2^(k-1)*leaf_size + low
+    elseif  n_rest >= 2^(k-1) 
+        mid_idx = (2^k)*leaf_size + low
     else
-        mid_idx = n_points - 2^(k-1)*leaf_size + low
+        mid_idx = n_points - (2^(k-1))*leaf_size + low
     end
-
-    println(mid_idx)
 
     # Find the dimension where we have the largest spread.
     n_dim = size(data, 1)
@@ -307,11 +306,11 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
                                                   index::Int=1)
 
     if is_leaf_node(tree, index)
-        println("at leaf ", index)
+        #println("at leaf ", index)
         point_index = get_point_index(tree, index)
         for z in point_index:point_index + get_n_points(tree, index) - 1
-            println("index", z)
-            println("real", tree.indices[z])
+            #println("index", z)
+            #println("real", tree.indices[z])
             # Inlined distance because views are just too slow
             dist_d = 0.0
             for i = 1:size(point, 1)
@@ -339,19 +338,19 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
         close = get_left_node(index)
         far = get_right_node(index)
     else
-        far = get_right_node(index)
-        close = get_left_node(index)
+        far = get_left_node(index)
+        close = get_right_node(index)
     end
 
-    println("going to ", close)
+    #println("going to ", close)
     _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, close)
 
     # Only go far node if it sphere crosses hyperplane
     if abs2(point[tree.split_dims[index]] - tree.split_vals[index]) < best_dists[k]
-        println("going to ", far)
+        #println("going to ", far)
          _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, far)
      else
-        println("aborted at ", index)
+        #println("aborted at ", index)
     end
 
     return
@@ -458,4 +457,4 @@ function select_spec!{T <: FloatingPoint}(v::AbstractVector, k::Int, lo::Int,
     end
     return
 end
-end
+#end
