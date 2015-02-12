@@ -24,9 +24,9 @@ The tree is created with the command:
 ```julia
 using KDTrees
 data = rand(3,10^3)
-tree = KDTree(data, leaf_size=15)
+tree = KDTree(data, leaf_size=5)
 ```
-The `data` argument for the tree should be a matrix of floats of dimension `(n_dim, n_points)`. The `leaf_size` determines for what number of points the tree should stop splitting. 15 is a good number and is also the default value.
+The `data` argument for the tree should be a matrix of floats of dimension `(n_dim, n_points)`. The `leaf_size` determines for what number of points the tree should stop splitting. 5 is a good number and is also the default value.
 
 ### Points inside hyper sphere
 
@@ -53,7 +53,7 @@ gives the indices:
 
 ### K-Nearest-Neighbours
 
-Finds the *k* nearest neighbours to a given point. his is done with the exported function `k_nearest_neighbour((tree, point, k)`. Returns a tuple of two lists with the indices and the distances
+Finds the *k* nearest neighbours to a given point. his is done with the exported function `k_nearest_neighbour(tree, point, k)`. Returns a tuple of two lists with the indices and the distances
 from the given points respectively. These are sorted in the order of smallest to largest distance.
 
 The current implementation is a bit slower than it has to be for large *k*.
@@ -74,7 +74,7 @@ Clicking on a plot takes you to the Plotly site for the plot where the exact dat
 
 ### KNN benchmark
 
-[![bench_knn](https://plot.ly/~kcarlsson89/164.png)](https://plot.ly/~kcarlsson89/164/)
+[![bench_knn](https://plot.ly/~kcarlsson89/284.png)](https://plot.ly/~kcarlsson89/284/)
 
 ### Build time benchmark
 
