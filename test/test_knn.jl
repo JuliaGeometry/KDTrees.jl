@@ -17,8 +17,11 @@ facts("KDTrees") do
         end
 
         # Check results vs brute force
-
-        pq = PriorityQueue{Int, Float64}(Base.Order.Reverse)
+        if Base.VERSION >= v"0.4.0-dev"
+            pq = PriorityQueue(Int, Float64, Base.Order.Reverse)
+        else
+            pq = PriorityQueue{Int, Float64}(Base.Order.Reverse)
+        end
 
         k = 3
         for i in 1:k
