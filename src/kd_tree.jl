@@ -298,7 +298,7 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
             # Inlined distance because views are just too slow
             dist_d = 0.0
             for i = 1:tree.n_dim
-                dist_d += abs2(tree.data[i, tree.indices[z]] - point[i])
+                @inbounds dist_d += abs2(tree.data[i, tree.indices[z]] - point[i])
             end
             #dist_d = euclidean_distance(trial_point, point)
             if dist_d <= best_dists[k] # Closer than the currently k closest.
@@ -306,7 +306,7 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
                 while(ins_point < k && dist_d > best_dists[ins_point]) # Look through best_dists for insertion point
                     ins_point +=1
                 end
-                for (i in k:-1:ins_point+1) # Shift down
+                @inbounds for (i in k:-1:ins_point+1) # Shift down
                      best_idxs[i] = best_idxs[i-1]
                      best_dists[i]  = best_dists[i-1]
                 end
