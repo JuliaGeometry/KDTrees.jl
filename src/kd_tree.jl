@@ -1,4 +1,4 @@
-#module KD
+module KD
 function euclidean_distance{T <: FloatingPoint}(point_1::AbstractVector{T},
                                                 point_2::AbstractVector{T})
     dist = 0.0
@@ -115,7 +115,7 @@ is_leaf_node(tree::KDTree, idx::Int) = idx > tree.n_internal_nodes
 
 # Constructor for KDTree
 function KDTree{T <: FloatingPoint}(data::Matrix{T},
-                                    leaf_size::Int = 1)
+                                    leaf_size::Int = 15)
 
     n_dim, n_points = size(data)
 
@@ -126,6 +126,7 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T},
                     " Did you acidentally flip them?"))
     end
 
+<<<<<<< HEAD
 
     n_leaf_nodes =  iceil(n_points / leaf_size)
     n_internal_nodes = n_leaf_nodes - 1
@@ -145,7 +146,6 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T},
 
 
     #k = ifloor(log2(n_leafs)) # First row with leaf nodes
-
 
     indices = collect(1:n_points)
     split_vals = Array(T, n_internal_nodes)
@@ -375,6 +375,9 @@ function query_ball_point{T <: FloatingPoint}(tree::KDTree,
     return idx_in_ball
 end
 
+# allow other real numbers but convert them to float
+query_ball_point{P<:Real,R<:Real}(tree::KDTree, point::Vector{P}, radius::R) =
+  query_ball_point(tree, float(point), float(radius))
 
 # Explicitly check the distance between leaf node and point
 function traverse_check{T <: FloatingPoint}(tree::KDTree,
@@ -457,4 +460,4 @@ function select_spec!{T <: FloatingPoint}(v::AbstractVector, k::Int, lo::Int,
     end
     return
 end
-#end
+end
