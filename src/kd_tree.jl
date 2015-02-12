@@ -88,7 +88,6 @@ is_leaf_node(tree::KDTree, idx::Int) = idx > tree.n_internal_nodes
 
 
 function get_n_points(tree::KDTree, idx::Int)
-    # If not last node, just return leaf_size
     if idx != tree.n_leafs + tree.n_internal_nodes
         return tree.leaf_size
     else
@@ -96,13 +95,13 @@ function get_n_points(tree::KDTree, idx::Int)
     end
 end
 
-
+# Fix this ugly shajt
 function get_point_index(tree::KDTree, idx::Int) 
     if idx >= tree.cross_node
         return (idx - tree.cross_node) * tree.leaf_size + 1
     else
-        return ((tree.offset - 1) + (idx - 1) - tree.n_internal_nodes) * tree.leaf_size
-                 + tree.last_node_size + 1
+        return ((tree.offset - 1 + idx - 1 - tree.n_internal_nodes) * tree.leaf_size 
+                  + tree.last_node_size + 1)
     end
 end
 
@@ -160,8 +159,9 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T},
         maxes[j] = dim_max
         mins[j] = dim_min
     end
-    hyper_recs[1] = HyperRectangle{T}(mins, maxes)
-
+    if n_internal_nodes > 0
+        hyper_recs[1] = HyperRectangle{T}(mins, maxes)
+    end
     low = 1
     high = n_points
 
@@ -212,8 +212,12 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
     # else we do the opposite.
     if k == 0
         mid_idx = low
-    elseif  rest >= 2^(k-1) 
+    elseif n_points <= 2*leaf_size
+        mid_idx = leaf_size + low
+    elseif  rest > 2^(k-1)
         mid_idx = 2^k * leaf_size + low
+    elseif rest == 0
+        mid_idx = 2^(k-1)* leaf_size + low
     else
         mid_idx = n_points - 2^(k-1) * leaf_size + low
     end
