@@ -74,7 +74,7 @@ Clicking on a plot takes you to the Plotly site for the plot where the exact dat
 
 ### KNN benchmark
 
-[![bench_knn](https://plot.ly/~kcarlsson89/164.png)](https://plot.ly/~kcarlsson89/164/)
+[![bench_knn](https://plot.ly/~kcarlsson89/284.png)](https://plot.ly/~kcarlsson89/284/)
 
 ### Build time benchmark
 
