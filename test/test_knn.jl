@@ -6,10 +6,11 @@ facts("KDTrees") do
         size_data = 1000
         data = rand(dim_data, size_data)
 
-        tree = KDTree(data)
+        
 
         # Checking that we find existing points
         for i = 1:50
+            tree = KDTree(data, rand(1:15))
             n = rand(1:size_data)
             idx, dist = k_nearest_neighbour(tree, data[:,n], 1)
             @fact n => idx[1]

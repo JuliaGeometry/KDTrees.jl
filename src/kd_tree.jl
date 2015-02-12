@@ -58,33 +58,57 @@ immutable KDTree{T <: FloatingPoint}
   split_vals::Vector{T} # what values we split the tree at for a given internal node
   split_dims::Vector{Int} # what dimension we split the tree for a given internal node
   indices::Vector{Int} # Translates from a point index to the actual point in the data
-  start_idxs::Vector{Int}
-  end_idxs::Vector{Int}
-  is_leafs::Vector{Bool}
+  n_dim::Int
+  last_node_size::Int
+  leaf_size::Int
+  n_leafs::Int
+  n_internal_nodes::Int
+  cross_node::Int
+  first_leaf_row::Int
+  offset::Int
 end
+
 
 function show(io::IO, tree::KDTree)
     print(io, string("KDTree from ", size(tree.data, 2),
                  " point in ", size(tree.data, 1), " dimensions."))
 end
 
+
 # Helper functions to get node numbers and points
 get_left_node(idx::Int) = idx * 2
 get_right_node(idx::Int) = idx * 2 + 1
 get_parent_node(idx::Int) = div(idx, 2)
-get_point_index(tree::KDTree, idx::Int) = idx - length(tree.nodes)
 
 # From node index -> point in data
-get_point(tree::KDTree, idx::Int) = view(tree.data, :, tree.indices[get_point_index(tree, idx)])
+
+#get_point(tree::KDTree, idx::Int) = view(tree.data, :, tree.indices[get_point_index(tree, idx)])
+
+is_leaf_node(tree::KDTree, idx::Int) = idx > tree.n_internal_nodes
 
 
+function get_n_points(tree::KDTree, idx::Int)
+    if idx != tree.n_leafs + tree.n_internal_nodes
+        return tree.leaf_size
+    else
+        return tree.last_node_size
+    end
+end
 
-#is_leaf_node(tree::KDTree, idx::Int) = idx > tree.n_internal_nodes
+# Fix this ugly shajt
+function get_point_index(tree::KDTree, idx::Int) 
+    if idx >= tree.cross_node
+        return (idx - tree.cross_node) * tree.leaf_size + 1
+    else
+        return ((tree.offset - 1 + idx - 1 - tree.n_internal_nodes) * tree.leaf_size 
+                  + tree.last_node_size + 1)
+    end
+end
 
 
 # Constructor for KDTree
 function KDTree{T <: FloatingPoint}(data::Matrix{T},
-                                    leaf_size::Int = 15)
+                                    leaf_size::Int = 5)
 
     n_dim, n_points = size(data)
 
@@ -95,18 +119,32 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T},
                     " Did you acidentally flip them?"))
     end
 
-    # Took the formula below from scikits implementation
+    n_leaf_nodes =  ceil(Integer, n_points / leaf_size)
+    n_internal_nodes = n_leaf_nodes - 1
 
-    n_nodes = 2^(floor(Integer, max(1,log2( (n_points - 1) / leaf_size))) + 1) - 1
+    l = floor(Integer, log2(n_leaf_nodes))
+
+
+    offset = 2(n_leaf_nodes - 2^l)
+    cross_node = int(2^(l+1))
+
+    last_node_size = n_points % leaf_size
+    if last_node_size == 0
+        last_node_size = leaf_size
+    end
+
+
+    # This only happens when n_points / leaf_size is a power of 2?
+    if cross_node >= n_internal_nodes + n_leaf_nodes
+        cross_node = div(cross_node, 2)
+    end
 
 
     indices = collect(1:n_points)
-    split_vals = Array(T, n_nodes)
-    split_dims = Array(Int, n_nodes) # 128 dimensions should be enough
-    start_idxs = Array(Int, n_nodes)
-    end_idxs = Array(Int, n_nodes)
-    is_leafs = Array(Bool, n_nodes)
-    hyper_recs = Array(HyperRectangle{T}, n_nodes)
+    split_vals = Array(T, n_internal_nodes)
+    split_dims = Array(Int, n_internal_nodes) # 128 dimensions should be enough
+    hyper_recs = Array(HyperRectangle{T}, n_internal_nodes)
+
 
     # Create first bounding hyper rectangle
     maxes = Array(T, n_dim)
@@ -121,22 +159,19 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T},
         maxes[j] = dim_max
         mins[j] = dim_min
     end
-    hyper_recs[1] = HyperRectangle{T}(mins, maxes)
-
+    if n_internal_nodes > 0
+        hyper_recs[1] = HyperRectangle{T}(mins, maxes)
+    end
     low = 1
     high = n_points
 
     # Call the recursive KDTree builder
-    build_KDTree(1, data, split_vals,
-                 split_dims, hyper_recs,
-                 indices, start_idxs, end_idxs, is_leafs,
-                  low, high)
+    build_KDTree(1, data, split_vals, split_dims, hyper_recs,
+                 indices, leaf_size, n_internal_nodes, low, high)
 
-
-    KDTree(data, hyper_recs,
-           split_vals, split_dims, indices, start_idxs,
-           end_idxs, is_leafs)
-  end
+    KDTree(data, hyper_recs, split_vals, split_dims, indices, n_dim, last_node_size,
+          leaf_size, n_leaf_nodes, n_internal_nodes, cross_node, l ,offset)
+end
 
 
 # Recursive function to build the tree.
@@ -150,29 +185,46 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
                                           split_dims::Vector{Int},
                                           hyper_recs::Vector{HyperRectangle{T}},
                                           indices::Vector{Int},
-                                          start_idxs::Vector{Int},
-                                          end_idxs::Vector{Int},
-                                          is_leafs::Vector{Bool},
+                                          leaf_size::Int,
+                                          n_internal_nodes::Int,
                                           low::Int,
                                           high::Int)
 
-    n_nodes = length(split_dims)
-
-
+ 
     n_points = high - low + 1 # Points left
-    n_dim = size(data, 1)
 
-    if get_right_node(index) > n_nodes
-        is_leafs[index] = true
-        start_idxs[index] = low
-        end_idxs[index] = high
+    if n_points <= leaf_size
         return
     end
 
-    is_leafs[index] = false
 
+    # The number of leafs left, ceil to count a partially
+    # filled node as 1.
+    n_leafs = ceil(Integer, n_points / leaf_size)
+
+    # Rows left in the sub tree
+    k = floor(Integer, log2(n_leafs))
+
+    # Number of leftover nodes needed
+    rest = n_leafs - 2^k
+
+    # If the last leaf node will be on the right side of the tree we
+    # send points so that left tree will be perfectly filled,
+    # else we do the opposite.
+    if k == 0
+        mid_idx = low
+    elseif n_points <= 2*leaf_size
+        mid_idx = leaf_size + low
+    elseif  rest > 2^(k-1)
+        mid_idx = 2^k * leaf_size + low
+    elseif rest == 0
+        mid_idx = 2^(k-1)* leaf_size + low
+    else
+        mid_idx = n_points - 2^(k-1) * leaf_size + low
+    end
 
     # Find the dimension where we have the largest spread.
+    n_dim = size(data, 1)
     split_dim = -1
     max_spread = zero(T)
     for dim in 1:n_dim
@@ -193,17 +245,6 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
 
     split_dims[index] = split_dim
 
-    # Decide where to split
-    k = floor(Integer, log2(n_points))
-
-    rest = n_points - 2^k
-
-    if rest > 2^(k-1)
-        mid_idx = 2^k + low
-    else
-        mid_idx = 2^(k-1) + rest + low
-    end
-
     # select! works like n_th element in c++
     # sorts the points in the maximum spread dimension s.t
     # data[split_dim, a]) < data[split_dim, b]) for all a > mid_idx, b > mid_idx
@@ -214,16 +255,22 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
 
     # Create the hyper rectangles for the children
     hyper_rec_1, hyper_rec_2 = split_hyper_rec(hyper_recs[index], split_dim, split)
-    hyper_recs[get_left_node(index)] = hyper_rec_1
-    hyper_recs[get_right_node(index)] = hyper_rec_2
+    
+    # Only assign hyper rectangle if next node is not a leaf node.
+    if get_left_node(index) <= n_internal_nodes
+        hyper_recs[get_left_node(index)] = hyper_rec_1
+    end
+    if get_right_node(index) <= n_internal_nodes
+        hyper_recs[get_right_node(index)] = hyper_rec_2
+    end
 
     build_KDTree(get_left_node(index), data,
                   split_vals, split_dims, hyper_recs,
-                   indices, start_idxs, end_idxs, is_leafs, low, mid_idx - 1)
+                   indices, leaf_size, n_internal_nodes, low, mid_idx - 1)
 
     build_KDTree(get_right_node(index), data,
                   split_vals, split_dims, hyper_recs,
-                  indices,start_idxs, end_idxs, is_leafs, mid_idx, high)
+                  indices, leaf_size, n_internal_nodes, mid_idx, high)
 end
 
 
@@ -249,18 +296,19 @@ function k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree, point::Vector{T},
 end
 
 
-function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
+function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree{T},
                                                   point::Vector{T},
                                                   k::Int,
                                                   best_idxs ::Vector{Int},
                                                   best_dists::Vector{T},
                                                   index::Int=1)
 
-    if tree.is_leafs[index]
-        for z in tree.start_idxs[index]:tree.end_idxs[index]
+    if is_leaf_node(tree, index)
+        point_index = get_point_index(tree, index)
+        for z in point_index:point_index + get_n_points(tree, index) - 1
             # Inlined distance because views are just too slow
             dist_d = 0.0
-            for i = 1:size(point, 1)
+            for i = 1:tree.n_dim
                 @inbounds dist_d += abs2(tree.data[i, tree.indices[z]] - point[i])
             end
             #dist_d = euclidean_distance(trial_point, point)
@@ -269,7 +317,7 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
                 while(ins_point < k && dist_d > best_dists[ins_point]) # Look through best_dists for insertion point
                     ins_point +=1
                 end
-                for (i in k:-1:ins_point+1) # Shift down
+                @inbounds for (i in k:-1:ins_point+1) # Shift down
                      best_idxs[i] = best_idxs[i-1]
                      best_dists[i]  = best_dists[i-1]
                 end
@@ -289,11 +337,13 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
         close = get_right_node(index)
     end
 
+    #println("going to ", close)
     _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, close)
 
-    # Only go far node if it sphere crosses hyperplane
+    # Only go far node if its sphere crosses hyperplane
     if abs2(point[tree.split_dims[index]] - tree.split_vals[index]) < best_dists[k]
          _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, far)
+     else
     end
 
     return
@@ -301,7 +351,7 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree,
 end
 # Returns the sorted list of indices for all points in the tree inside a
 # hypersphere of a given point with a given radius
-function query_ball_point{T <: FloatingPoint}(tree::KDTree,
+function query_ball_point{T <: FloatingPoint}(tree::KDTree{T},
                                               point::Vector{T},
                                               radius::T)
 
@@ -323,23 +373,18 @@ query_ball_point{P<:Real,R<:Real}(tree::KDTree, point::Vector{P}, radius::R) =
   query_ball_point(tree, float(point), float(radius))
 
 # Explicitly check the distance between leaf node and point
-function traverse_check{T <: FloatingPoint}(tree::KDTree,
+function traverse_check{T <: FloatingPoint}(tree::KDTree{T},
                                             index::Int,
                                             point::Vector{T},
                                             r::T,
                                             idx_in_ball::Vector{Int})
 
-
-    min_d, max_d = get_min_max_distance(tree.hyper_recs[index], point)
-    if min_d > r # Hyper shpere is outside hyper rectangle, skip the whole sub tree
-        return
-    elseif max_d < r
-        traverse_no_check(tree, index, idx_in_ball)
-    elseif tree.is_leafs[index]
-        for z in tree.start_idxs[index]:tree.end_idxs[index]
+    if is_leaf_node(tree, index)
+        point_index = get_point_index(tree, index)
+        for z in point_index:point_index + get_n_points(tree, index) - 1
             # Inlined distance because views are just too slow
             dist_d = 0.0
-            for i = 1:size(point, 1)
+            for i = 1:tree.n_dim
                 @inbounds dist_d += abs2(tree.data[i, tree.indices[z]] - point[i])
             end
             if dist_d < r
@@ -348,6 +393,12 @@ function traverse_check{T <: FloatingPoint}(tree::KDTree,
             end
         end
         return
+    end
+    min_d, max_d = get_min_max_distance(tree.hyper_recs[index], point)
+    if min_d > r # Hyper shpere is outside hyper rectangle, skip the whole sub tree
+        return
+    elseif max_d < r
+        traverse_no_check(tree, index, idx_in_ball)
     else
         traverse_check(tree, get_left_node(index), point, r, idx_in_ball)
         traverse_check(tree, get_right_node(index), point, r, idx_in_ball)
@@ -358,8 +409,9 @@ end
 # Adds everything in this subtree since we have determined
 # that the hyper rectangle completely encloses the hyper sphere
 function traverse_no_check(tree::KDTree, index::Int, idx_in_ball::Vector{Int})
-    if tree.is_leafs[index]
-        for z in tree.start_idxs[index]:tree.end_idxs[index]
+   if is_leaf_node(tree, index)
+        point_index = get_point_index(tree, index)
+        for z in point_index:point_index + get_n_points(tree, index) - 1
             push!(idx_in_ball, tree.indices[z])
         end
         return
