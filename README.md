@@ -24,9 +24,9 @@ The tree is created with the command:
 ```julia
 using KDTrees
 data = rand(3,10^3)
-tree = KDTree(data, leaf_size=15)
+tree = KDTree(data, leaf_size=5)
 ```
-The `data` argument for the tree should be a matrix of floats of dimension `(n_dim, n_points)`. The `leaf_size` determines for what number of points the tree should stop splitting. 15 is a good number and is also the default value.
+The `data` argument for the tree should be a matrix of floats of dimension `(n_dim, n_points)`. The `leaf_size` determines for what number of points the tree should stop splitting. 5 is a good number and is also the default value.
 
 ### Points inside hyper sphere
 
