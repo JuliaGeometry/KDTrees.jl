@@ -53,7 +53,7 @@ gives the indices:
 
 ### K-Nearest-Neighbours
 
-Finds the *k* nearest neighbours to a given point. his is done with the exported function `k_nearest_neighbour((tree, point, k)`. Returns a tuple of two lists with the indices and the distances
+Finds the *k* nearest neighbours to a given point. his is done with the exported function `k_nearest_neighbour(tree, point, k)`. Returns a tuple of two lists with the indices and the distances
 from the given points respectively. These are sorted in the order of smallest to largest distance.
 
 The current implementation is a bit slower than it has to be for large *k*.
