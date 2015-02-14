@@ -29,6 +29,8 @@ facts("KDTrees") do
         @fact_throws query_ball_poin(tree, [0.1], 1.0) # n_dim != trees dim
 
 
+        ####################################################################
+        # Test against brute force
         idx = Int[]
         dim_data = 3
         size_data = 100
@@ -38,7 +40,7 @@ facts("KDTrees") do
         r = 0.3
         # Brute force
         for n in 1:size_data
-            d = sqrt(KDTrees.euclidean_distance([data[:,n]], p))
+            d = sqrt(KDTrees.euclidean_distance_red([data[:,n]], p))
             if d <= r # Closer than the currently k closest.
                 push!(idx, n)
             end
@@ -49,8 +51,9 @@ facts("KDTrees") do
         for i in 1:length(idx)
             @fact q_idxs[i] in idx => true
         end
+        ####################################################################
 
-    end #context
+    end # context
 
 
     context("KDTrees.yolo_testing") do
@@ -71,11 +74,9 @@ facts("KDTrees") do
         end
         idxs_knn, dists = k_nearest_neighbour(tree, point, length(idxs_ball))
 
-
-
         for i in 1:length(idxs_ball)
             @fact idxs_ball[i] in idxs_knn => true
         end
-    end #context
+    end # context
 
 end # facts
