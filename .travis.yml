@@ -7,7 +7,6 @@ notifications:
 script:
     - julia -e 'Pkg.init(); Pkg.clone(pwd())'
     - julia -e 'Pkg.add("FactCheck");'
-    - julia -e 'Pkg.add("ArrayViews");'
     - julia -e 'Pkg.test("KDTrees", coverage=true)'
 
 after_success:

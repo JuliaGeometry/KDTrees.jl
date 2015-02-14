@@ -1,5 +1,6 @@
 using KDTrees
 using StatsBase
+using Plotly
 
 function run_bench_build_tree(dim, knn, exps, rounds)
     println("Running build tree benchmark for 10^(", exps, ") points in ", dim, " dimensions.")
@@ -7,15 +8,11 @@ function run_bench_build_tree(dim, knn, exps, rounds)
 
     times = zeros(length(n_points), rounds)
 
-    # Compile it
-    tree = KDTree(randn(2,2))
-    k_nearest_neighbour(tree, zeros(2), 1)
-
     timer = 0.0
     for (i, n_point) in enumerate(n_points)
         for (j , round) in enumerate(1:rounds)
             n_iters = 5
-            println("Round ", j, " out of ", rounds, " for ", dim, "x", n_point, "...")
+            println("Round ", j, " out of ", rounds, " for ", dim, "x", n_point, "...\r")
             while true
                 timer = time_ns()
                 for k in 1:n_iters
@@ -27,34 +24,34 @@ function run_bench_build_tree(dim, knn, exps, rounds)
                     n_iters *= 3
                     continue
                 end
-                break # Break this round
+                break # Ends this round
             end
         times[i, j] = timer / n_iters
         end
+        println("\n")
     end
-    println("Done!")
+    println("\nDone!")
     return mean_and_std(times, 2)
 end
 
 dim = 3
 knn = 5
-exps = 1:0.5:6
+exps = 3:0.5:6
 rounds = 3
 
 times, stds = run_bench_build_tree(dim, knn, exps, rounds)
 times = vec(times)
 stds = vec(stds)
-# Plotting
-####################
+
+
 stderr = stds / sqrt(length(stds))
 ymins = times - 1.96*stderr
 ymaxs = times + 1.96*stderr
 sizes = [10.0^i::Float64 for i in exps]
 
-
+####################################################################
 # Plotting
-#=
-using Plotly
+####################################################################
 data = [
   [
     "x" => sizes,
@@ -88,10 +85,10 @@ Plotly.signin("kcarlsson89", "lolololoololololo")
 
 
 response = Plotly.plot(data, ["layout" => layout,
-                              "filename" => "bench_build",
+                              "filename" => "bench_build_x",
                               "fileopt" => "overwrite"])
 plot_url = response["url"]
-=#
+
 
 
 #=
