@@ -291,8 +291,15 @@ function k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree, point::Vector{T},
 
     _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, 1)
 
+    pop!(best_idxs)
+    pop!(best_dists)
+
+    for i in length(best_dists)
+        best_dists[i] = sqrt(best_dists[i])
+    end
+
     # Sqrt here because storing in reduced distance format
-    return best_idxs[1:end-1], sqrt(best_dists[1:end-1])
+    return best_idxs, best_dists
 end
 
 k_nearest_neighbour{P <: Real}(tree::KDTree, point::Vector{P}, k::Int) =
