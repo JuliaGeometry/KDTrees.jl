@@ -7,21 +7,17 @@ function run_bench_knn_points(dim, knn, exps, rounds)
 
     times = zeros(length(n_points), rounds)
 
-    # Compile it
-    tree = KDTree(randn(2,2))
-    k_nearest_neighbour(tree, zeros(2), 1)
-
     timer = 0.0
     for (i, n_point) in enumerate(n_points)
         for (j , round) in enumerate(1:rounds)
             n_iters = 100
-            println("Round ", j, " out of ", rounds, " for ", dim, "x", n_point, "...")
-            data = rand(dim, int(n_point))
-            tree = KDTree(data, 15)
+            print("Round ", j, " out of ", rounds, " for ", dim, "x", int(n_point), "...\r")
+            data = float32(rand(dim, int(n_point)))
+            tree = KDTree(data, 5)
             while true
                 timer = time_ns()
                 for k in 1:n_iters
-                	  p = rand(dim)
+                	  p = float32(rand(dim))
                     k_nearest_neighbour(tree, p, knn)
                 end
                 timer = (time_ns() - float(timer)) / 10^9 # To seconds
@@ -29,19 +25,20 @@ function run_bench_knn_points(dim, knn, exps, rounds)
                     n_iters *= 3
                     continue
                 end
-                break # Break this round
+                break # Ends this round
             end
         times[i, j] = timer / n_iters
         end
+        print("\n")
     end
-    println("Done!")
+    println("\nDone!")
     return mean_and_std(1./times, 2)
 end
 
 data = Dict[]
 for knn in [1, 5, 10]
   dim = 3
-  exps = 1:0.5:6
+  exps = 3:0.5:6
   rounds = 5
 
   speeds, stds = run_bench_knn_points(dim, knn, exps, rounds)
@@ -58,7 +55,7 @@ for knn in [1, 5, 10]
     "y" => speeds,
     "type" => "scatter",
     "mode" => "lines+markers",
-    "name" => string("k = ", knn),
+    "name" => string("k2 = ", knn),
     "error_y" => [
         "type" => "data",
         "array" => stderr*1.96*2,
@@ -68,9 +65,9 @@ for knn in [1, 5, 10]
   push!(data, trace)
 end
 
-
+####################################################################
 # Plotting
-####################
+####################################################################
 
 layout = [
   "title" => "KNN search speed (dim = 3)",
@@ -86,11 +83,10 @@ layout = [
   "autorange" => true
 ]
 
-using Plotly
-Plotly.signin("kcarlsson89", "lololololololol")
+Plotly.signin("kcarlsson89", "lolololololol")
 
 response = Plotly.plot(data, ["layout" => layout,
-                              "filename" => "plotly-log-axes",
+                              "filename" => "bench_linux_rly_inline_04",
                               "fileopt" => "overwrite"])
 plot_url = response["url"]
 

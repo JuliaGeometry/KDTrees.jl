@@ -2,7 +2,6 @@ module KDTrees
 
     import Base.show
 
-    using ArrayViews
     using Compat
 
     export KDTree
