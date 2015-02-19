@@ -286,13 +286,13 @@ function k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree, point::Vector{T},
                      " gave a point with dimension ", size(point,1), "."))
     end
 
-    best_idxs = [-1 for i in 1:k]
-    best_dists = [typemax(T) for i in 1:k]
+    best_idxs = [-1 for i in 1:k+1]
+    best_dists = [typemax(T) for i in 1:k+1]
 
     _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, 1)
 
     # Sqrt here because storing in reduced distance format
-    return best_idxs, sqrt(best_dists)
+    return best_idxs[1:end-1], sqrt(best_dists[1:end-1])
 end
 
 k_nearest_neighbour{P <: Real}(tree::KDTree, point::Vector{P}, k::Int) =
@@ -310,19 +310,11 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree{T},
         point_index = get_point_index(tree, index)
         for z in point_index:point_index + get_n_points(tree, index) - 1
             dist_d = euclidean_distance_red(tree, z, point)
-            if dist_d <= best_dists[k]
-                ins_point = 1
-                # Find insertion point
-                while(ins_point < k && dist_d > best_dists[ins_point])
-                    ins_point +=1
-                end
-                @inbounds for (i in k:-1:ins_point+1) # Shift down
-                     best_idxs[i] = best_idxs[i-1]
-                     best_dists[i]  = best_dists[i-1]
-                end
-                # Update with new values
-                best_idxs[ins_point] = tree.indices[z]
-                best_dists[ins_point] = dist_d
+            if dist_d <= best_dists[1]
+                best_dists[end] = dist_d
+                idx = tree.indices[z]
+                best_idxs[end] = idx
+                percolate_down!(best_dists, best_idxs, dist_d, idx)
             end
         end
         return
@@ -339,7 +331,7 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree{T},
     _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, close_node)
 
     # Only go far node if the distance from the k-th best node crosses hyperplane
-    if abs2(point[tree.split_dims[index]] - tree.split_vals[index]) < best_dists[k]
+    if abs2(point[tree.split_dims[index]] - tree.split_vals[index]) < best_dists[1]
          _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, far_node)
     end
     return
@@ -450,4 +442,27 @@ function select_spec!{T <: FloatingPoint}(v::AbstractVector, k::Int, lo::Int,
         end
     end
     return
+end
+
+
+# Binary min-heap percolate down.
+function percolate_down!{T <: FloatingPoint}(xs::AbstractArray{T},
+                                              xis::AbstractArray{Int},
+                                              dist::T,
+                                              index::Int)
+    i = 1
+    len = length(xs)
+    @inbounds while (l = get_left_node(i)) <= len
+        r = get_right_node(i)
+        j = r >= len || (xs[l] > xs[r]) ? l : r
+        if xs[j] > dist
+            xs[i] = xs[j]
+            xis[i] = xis[j]
+            i = j
+        else
+            break
+        end
+    end
+    xs[i] = dist
+    xis[i] = index
 end
