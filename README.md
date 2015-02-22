@@ -4,12 +4,9 @@ Kd trees for Julia.
 
 [![Build Status](https://travis-ci.org/KristofferC/KDTrees.jl.svg?branch=master)](https://travis-ci.org/KristofferC/KDTrees.jl) [![Coverage Status](https://coveralls.io/repos/KristofferC/KDTrees.jl/badge.svg)](https://coveralls.io/r/KristofferC/KDTrees.jl)
 
-Currently supports KNN-search and finding all points inside an hyper sphere centered at a given point
+This package contains a highly optimized kd tree to perform *k* nearest neighbour searches and range searches.
 
-Care has been taken with regards to performance. The tree is for example not naively implemented as nodes pointing to other nodes but instead as a collection of densely packed arrays. This gives better cache locality. This
-however means that the tree is immutable and new points can not be entered into the tree after it has been created.
-
-There are some benchmarks for the creation of the tree and the different searches in the benchmark folder. 
+The readme contains some examples, different benchmarks and a comparison for kNN to scipy's cKDTree.
 
 ## Author
 Kristoffer Carlsson (@KristofferC)
@@ -22,14 +19,19 @@ The tree is created with the command:
 ```julia
 using KDTrees
 data = rand(3,10^3)
-tree = KDTree(data, leaf_size=5)
+tree = KDTree(data, leafsize=10, reorder_data=true)
 ```
-The `data` argument for the tree should be a matrix of floats of dimension `(n_dim, n_points)`. The `leaf_size` determines for what number of points the tree should stop splitting. 5 is a good number and is also the default value.
+The `data` argument for the tree should be a matrix of floats of dimension `(n_dim, n_points)`. The `leafsize` determines for what number of points the tree should stop splitting. The default value is `leafsize = 10` which is a decent value. However, the optimal leafsize is dependent on the cost of the 
+distance function used.
 
-### Points inside hyper sphere
+The `reorder_data` argument is a bool which determines if the input data should
+be reordered to optimize for memory access. Points that are likely to be accessed close in time are also put close in memory. A copy is made of the data
+so the original data given is untouched.
 
-The exported `query_ball_point(tree, point, radius)` finds all points inside a hyper sphere centered at a given point with the given radius. The function
-returns a sorted list of the indices of the points in the sphere.
+### Range searches
+
+The exported `query_ball_point(tree, point, radius)` finds all points closer than the `radius` argument to the `point`. The function
+returns a sorted list of the indices of the points in range.
 
 ```julia
 using KDTrees
@@ -66,25 +68,60 @@ gives both the indices and distances:
 
 ## Benchmarks
 
-The benchmarks have been made with computer with a 4 core Intel i5-2500K @ 3.3 GHz with Julia v0.4.0-dev+3034.
+The benchmarks have been made with computer with a 4 core Intel i5-2500K @ 4.2 GHz with Julia v0.4.0-dev+3034.
 
 Clicking on a plot takes you to the Plotly site for the plot where the exact data can be seen.
 
 ### KNN benchmark
 
-[![bench_knn](https://plot.ly/~kcarlsson89/346.png)](https://plot.ly/~kcarlsson89/346/)
+[![bench_knn](https://plot.ly/~kcarlsson89/397.png)](https://plot.ly/~kcarlsson89/397/)
 
 ### Build time benchmark
 
-[![bench_knn](https://plot.ly/~kcarlsson89/168.png)](https://plot.ly/~kcarlsson89/168/)
+[![bench_knn](https://plot.ly/~kcarlsson89/413.png)](https://plot.ly/~kcarlsson89/413/)
 
-## TODOs
-* Add proper benchmarks, compare with others implementations. Update: Partly done
-* Add other measures than Euclidean distance.
-* Use a heap for storing the K best points in KNN instead of a linear array (should only matter for large K).
+### Short comparison vs scipy's cKDTree
+
+One of the most popular packages for scientific computing in Python
+is the scipy package. It can therefore be interesting to see how
+KDTrees.jl compares against scipy's cKDTree.
+
+A KNN search for a 100 000 point tree was performed for the five closest neighbours. The code and the resulting search speed are shown, first for
+cKDTree and then for KDTrees.jl
+
+**cKDTree:**
+
+```python
+>>> import numpy as np
+>>> from scipy.spatial import cKDTree
+>>> import timeit
+
+>>> t = timeit.Timer("tree.query(queries, k=5)",
+"""
+import numpy as np
+from scipy.spatial import cKDTree
+data = np.random.rand(10**5, 3)
+tree = cKDTree(data)
+queries = np.random.rand(10**5, 3)
+""")
+>>> t = min(t.repeat(3, 10)) / 10
+
+>>> print("knn / sec: ", 10**5 / t)
+('knn / sec: ', 251394)
+```
+
+**KDTrees.jl:**
+```julia
+julia> tree = KDTree(rand(3,10^5));
+julia> t = @elapsed for i = 1:10^5
+       k_nearest_neighbour(tree, rand(3), 5)
+       end;
+julia> print("knn / sec: ", 10^5 / t)
+knn / sec: 730922
+```
 
 ### Contribution
 
-Contributions are more than welcome. If you have an idea that would make the tree have better 
-performance or be more general please create a PR. Make sure you run the benchmarks before and
-after your changes.
+Contributions are more than welcome. If you have an idea that would make the
+tree have better performance or be more general please create a PR. Make 
+sure you run the benchmarks before and after your changes.
