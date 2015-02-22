@@ -1,5 +1,6 @@
 module TestKDTrees
     using FactCheck
+    using Devectorize
     using Base.Test
     using Base.Collections
 

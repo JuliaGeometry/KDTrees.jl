@@ -6,21 +6,23 @@ function run_bench_knn_points(dim, knn, exps, rounds)
     n_points = [10^i for i in exps]
 
     times = zeros(length(n_points), rounds)
-
+    gc_disable()
     timer = 0.0
     for (i, n_point) in enumerate(n_points)
         for (j , round) in enumerate(1:rounds)
-            n_iters = 100
+            n_iters = 25
             print("Round ", j, " out of ", rounds, " for ", dim, "x", int(n_point), "...\r")
-            data = float32(rand(dim, int(n_point)))
-            tree = KDTree(data, 5)
+            data = rand(dim, int(n_point))
+            tree = KDTree(data, 10)
             while true
+                gc_disable()
                 timer = time_ns()
                 for k in 1:n_iters
-                	  p = float32(rand(dim))
+                	  p = rand(dim)
                     k_nearest_neighbour(tree, p, knn)
                 end
                 timer = (time_ns() - float(timer)) / 10^9 # To seconds
+                gc_enable()
                 if timer < 1.0
                     n_iters *= 3
                     continue
@@ -55,7 +57,7 @@ for knn in [1, 5, 10]
     "y" => speeds,
     "type" => "scatter",
     "mode" => "lines+markers",
-    "name" => string("k2 = ", knn),
+    "name" => string("k = ", knn),
     "error_y" => [
         "type" => "data",
         "array" => stderr*1.96*2,
@@ -83,10 +85,10 @@ layout = [
   "autorange" => true
 ]
 
-Plotly.signin("kcarlsson89", "lolololololol")
+Plotly.signin("kcarlsson89", "lolololoololololo")
 
 response = Plotly.plot(data, ["layout" => layout,
-                              "filename" => "bench_linux_rly_inline_04",
+                              "filename" => "bench_linux_knn_3",
                               "fileopt" => "overwrite"])
 plot_url = response["url"]
 
