@@ -339,13 +339,10 @@ function k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree, point::Vector{T},
     end
 
     # Heaps to store indices and distances
-    best_idxs = [-1 for i in 1:k+1]
-    best_dists = [typemax(T) for i in 1:k+1]
+    best_idxs = [-1 for i in 1:k]
+    best_dists = [typemax(T) for i in 1:k]
 
     _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, 1)
-
-    pop!(best_idxs)
-    pop!(best_dists)
 
     # Sqrt here because distances are stored in reduced format.
     @devec best_dists[:] = sqrt(best_dists)
@@ -381,8 +378,8 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree{T},
             idx = tree.data_reordered ? z : tree.indices[z]
             dist_d = euclidean_distance_red(tree, idx, point)
             if dist_d <= best_dists[1]
-                best_dists[end] = dist_d
-                best_idxs[end] = idx
+                best_dists[1] = dist_d
+                best_idxs[1] = idx
                 percolate_down!(best_dists, best_idxs, dist_d, idx)
             end
         end
