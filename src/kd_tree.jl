@@ -303,7 +303,7 @@ end
 ####################################################################
 # Reduced euclidian distances
 @inline function euclidean_distance_red{T <: FloatingPoint}(point_1::AbstractVector{T},
-                                                        point_2::AbstractVector{T})
+                                                            point_2::AbstractVector{T})
     dist = 0.0
     for i = 1:size(point_1, 1)
         @inbounds dist += abs2(point_1[i] - point_2[i])
@@ -351,10 +351,12 @@ function k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree, point::Vector{T},
     @devec best_dists[:] = sqrt(best_dists)
 
     if tree.data_reordered
-        for i in 1:length(best_idxs)
+        for i in 1:k
             @inbounds best_idxs[i] = tree.indices[best_idxs[i]]
         end
     end
+
+    heap_sort_inplace!(best_dists, best_idxs)
 
     return best_idxs, best_dists
 end
@@ -533,13 +535,26 @@ function _select!{T <: FloatingPoint}(v::AbstractVector, k::Int, lo::Int,
 end
 
 
+
+# In place heap sort
+function heap_sort_inplace!(xs::AbstractArray, xis::AbstractArray{Int})
+    high = length(xs)
+    while high > 1
+        xs[high], xs[1] = xs[1], xs[high]
+        xis[high], xis[1] = xis[1], xis[high]
+        high -= 1
+        percolate_down!(xs, xis, xs[1], xis[1], high)
+    end
+end
+
+
 # Binary min-heap percolate down.
 function percolate_down!{T <: FloatingPoint}(xs::AbstractArray{T},
                                              xis::AbstractArray{Int},
                                              dist::T,
-                                             index::Int)
+                                             index::Int,
+                                             len::Int=length(xs))
     i = 1
-    len = length(xs)
     @inbounds while (l = getleft(i)) <= len
         r = getright(i)
         j = r >= len || (xs[l] > xs[r]) ? l : r

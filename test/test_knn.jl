@@ -65,10 +65,10 @@ idxs, dists = k_nearest_neighbour(tree, [0.8, 0.8], 1)
 @fact sqrt(0.2^2 + 0.2^2) => roughly(dists[1])
 
 idxs, dists = k_nearest_neighbour(tree, [0.1, 0.8], 3)
-@fact idxs => [5, 2, 3]
+@fact idxs => [3, 2, 5]
 
 idxs, dists = k_nearest_neighbour(tree, [1//10, 8//10], 3)
-@fact idxs => [5, 2, 3]
+@fact idxs => [3, 2, 5]
 
 @fact_throws k_nearest_neighbour(tree, [0.1, 0.8], 10) # k > n_points
 
