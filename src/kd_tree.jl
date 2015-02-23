@@ -538,15 +538,12 @@ end
 
 # In place heap sort
 function heap_sort_inplace!(xs::AbstractArray, xis::AbstractArray{Int})
-    high = length(xs)
-    while high > 1
-        xs[high], xs[1] = xs[1], xs[high]
-        xis[high], xis[1] = xis[1], xis[high]
-        high -= 1
-        percolate_down!(xs, xis, xs[1], xis[1], high)
+    for i in length(xs):-1:2
+        xs[i], xs[1] = xs[1], xs[i]
+        xis[i], xis[1] = xis[1], xis[i]
+        percolate_down!(xs, xis, xs[1], xis[1], i-1)
     end
 end
-
 
 # Binary min-heap percolate down.
 function percolate_down!{T <: FloatingPoint}(xs::AbstractArray{T},
@@ -557,7 +554,7 @@ function percolate_down!{T <: FloatingPoint}(xs::AbstractArray{T},
     i = 1
     @inbounds while (l = getleft(i)) <= len
         r = getright(i)
-        j = r >= len || (xs[l] > xs[r]) ? l : r
+        j = r > len || (xs[l] > xs[r]) ? l : r
         if xs[j] > dist
             xs[i] = xs[j]
             xis[i] = xis[j]

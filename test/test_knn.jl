@@ -12,7 +12,8 @@ data = rand(dim_data, size_data)
 for i = 1:50
     tree = KDTree(data, rand(1:15))
     n = rand(1:size_data)
-    idx, dist = k_nearest_neighbour(tree, data[:,n], 1)
+    idx, dist = k_nearest_neighbour(tree, data[:,n], rand(1:30))
+    @fact issorted(dist) => true
     @fact n => idx[1]
     #@fact KDTrees.euclidean_distance_red(tree.data[:,idx[1]], tree.data[:, n]) => roughly(0.0)
 end

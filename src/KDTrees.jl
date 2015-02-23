@@ -1,6 +1,7 @@
 module KDTrees
 
     import Base.show
+    using Base.Collections
 
     using Compat
     using Devectorize
