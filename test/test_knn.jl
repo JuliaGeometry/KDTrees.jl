@@ -10,7 +10,7 @@ size_data = 1000
 data = rand(dim_data, size_data)
 
 for i = 1:50
-    tree = KDTree(data, rand(1:15))
+    tree = KDTree(data, rand(1:15), randbool())
     n = rand(1:size_data)
     idx, dist = k_nearest_neighbour(tree, data[:,n], rand(1:30))
     @fact issorted(dist) => true

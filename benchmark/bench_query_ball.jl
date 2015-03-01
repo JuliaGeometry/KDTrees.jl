@@ -17,11 +17,13 @@ function run_bench_query_ball()
         for (j , n_point) in enumerate(n_points)
             data = rand(dims, n_point)
             tree = KDTree(data)
+            t = time_ns()
             for z = 1:n_iters
-            	p = rand(dims)
-            	times[i,j] += @elapsed query_ball_point(tree, p, r)
+                p = rand(dims)
+                query_ball_point(tree, p, r)
             end
-            times[i,j] /= n_iters
+            t = (time_ns() - float(t)) / 10^9 
+            times[i,j] =  t / n_iters
         end
     end
 

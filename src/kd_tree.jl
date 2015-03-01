@@ -1,49 +1,4 @@
 ####################################################################
-# Hyper rectangles
-####################################################################
-# Hyper rectangles are used to bound points in space.
-# For an inner node all it's children are bounded by the
-# inner nodes hyper rectangle.
-immutable HyperRectangle{T <: FloatingPoint}
-    mins::Vector{T}
-    maxes::Vector{T}
-end
-
-
-# Splits a hyper rectangle into two rectangles by dividing the
-# rectangle at a specific value in a given dimension.
-function split_hyper_rec{T <: FloatingPoint}(hyper_rec::HyperRectangle{T},
-                                             dim::Int,
-                                             value::T)
-    new_max = copy(hyper_rec.maxes)
-    new_max[dim] = value
-
-    new_min = copy(hyper_rec.mins)
-    new_min[dim] = value
-
-    return HyperRectangle(hyper_rec.mins, new_max),
-           HyperRectangle(new_min, hyper_rec.maxes)
-end
-
-
-# From a hyper rectangle we can find the minimum and maximum distance to a point.
-# If the point is inside the hyper cube the minimum dist is 0
-# Reduced distance used
-@inline function get_min_max_distance{T <: FloatingPoint}(rec::HyperRectangle{T}, point::Vector{T})
-    min_d = zero(T)
-    max_d = zero(T)
-    @inbounds for dim in 1:size(point,1)
-        d1 = abs2(rec.maxes[dim] - point[dim])
-        d2 = abs2(rec.mins[dim] - point[dim])
-        if (rec.mins[dim] > point[dim]) || (rec.maxes[dim] < point[dim]) # Point is outside
-            min_d += min(d1, d2)
-        end
-        max_d += max(d1,d2)
-    end
-    return min_d, max_d
-end
-
-####################################################################
 # KD Tree
 ####################################################################
 # The KDTree type
@@ -52,7 +7,7 @@ immutable KDTree{T <: FloatingPoint}
     hyper_recs::Vector{HyperRectangle{T}} # Each hyper rectangle bounds its children
     indices::Vector{Int} # Translation between tree index to point indes or adsa
     split_vals::Vector{T} # what values we split the tree at for a given internal node
-    split_dims::Vector{Int8} # what dimension we split the tree for a given internal node
+    split_dims::Vector{Int} # what dimension we split the tree for a given internal node
     n_d::Int
     last_node_size::Int
     leafsize::Int
@@ -105,7 +60,7 @@ end
 # Constructor for KDTree
 function KDTree{T <: FloatingPoint}(data::Matrix{T},
                                     leafsize::Int = 10,
-                                    reorder_data::Bool = true)
+                                    reorder_data::Bool = false)
 
     n_d, n_p = size(data)
 
@@ -132,7 +87,6 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T},
         last_node_size = leafsize
     end
 
-
     indices = collect(1:n_p)
 
     if reorder_data
@@ -144,9 +98,8 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T},
     end
 
     split_vals = Array(T, n_internal)
-    split_dims = Array(Int8, n_internal) # 128 dimensions should be enough
+    split_dims = Array(Int, n_internal) # 128 dimensions should be enough
     hyper_recs = Array(HyperRectangle{T}, n_internal + n_leaf)
-
 
     # Create first bounding hyper rectangle
     maxes = Array(T, n_d)
@@ -194,7 +147,7 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
                                           data::Matrix{T},
                                           data_reordered::Matrix{T},
                                           split_vals::Vector{T},
-                                          split_dims::Vector{Int8},
+                                          split_dims::Vector{Int},
                                           hyper_recs::Vector{HyperRectangle{T}},
                                           indices::Vector{Int},
                                           indices_reorder::Vector{Int},
@@ -313,14 +266,26 @@ end
 
 
 @inline function euclidean_distance_red{T <: FloatingPoint}(tree::KDTree{T},
-                                                        idx::Int,
-                                                        point::AbstractVector{T})
+                                                            idx::Int,
+                                                            point::AbstractVector{T})
     dist = 0.0
     for i = 1:tree.n_d
         @inbounds dist += abs2(tree.data[i, idx] - point[i])
     end
     return dist
 end
+
+@inline function euclidean_distance_red{T <: FloatingPoint}(tree::KDTree{T},
+                                                        idx::Int,
+                                                        tree2::KDTree{T},
+                                                        idx2::Int)
+    dist = 0.0
+    for i = 1:tree.n_d
+        @inbounds dist += abs2(tree.data[i, idx] - tree2.data[i, idx2])
+    end
+    return dist
+end
+
 
 ####################################################################
 # Query functions
@@ -339,17 +304,22 @@ function k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree, point::Vector{T},
     end
 
     # Heaps to store indices and distances
-    best_idxs = [-1 for i in 1:k]
-    best_dists = [typemax(T) for i in 1:k]
+    best_idxs = [-1 for _ in 1:k]
+    best_dists = [typemax(T) for _ in 1:k]
 
-    _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, 1)
+    if tree.n_d > 7
+        init_min = get_min_distance(tree.hyper_recs[1], point)
+    else
+        init_min = 0.0
+    end
+    _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, 1, init_min)
 
     # Sqrt here because distances are stored in reduced format.
     @devec best_dists[:] = sqrt(best_dists)
 
     if tree.data_reordered
-        for i in 1:k
-            @inbounds best_idxs[i] = tree.indices[best_idxs[i]]
+        for j in 1:k
+            @inbounds best_idxs[j] = tree.indices[best_idxs[j]]
         end
     end
 
@@ -367,7 +337,10 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree{T},
                                                   k::Int,
                                                   best_idxs ::Vector{Int},
                                                   best_dists::Vector{T},
-                                                  index::Int)
+                                                  index::Int,
+                                                  min_dist::T)
+
+
 
     if isleaf(tree, index)
         p_index = point_index(tree.cross_node, tree.offset, tree.last_node_size,
@@ -394,11 +367,33 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree{T},
         close_node = getright(index)
     end
 
-    _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, close_node)
+    
 
+    _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, close_node, min_dist)
+
+
+    if tree.n_d >= 7 
+        if min_dist > best_dists[1] # Hyper sphere is outside hyper rectangle, skip the whole sub tree
+            return
+        end
+
+        min_d_dim = get_min_dim(tree.hyper_recs[index], point, tree.split_dims[index])
+        min_d_dim2 = get_min_dim(tree.hyper_recs[far_node], point, tree.split_dims[index])
+        far_min = min_dist - min_d_dim + min_d_dim2
+        
+        if far_min < best_dists[1]
+                _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, far_node, far_min)
+        end
+    else
+        
+    #println(abs2(point[tree.split_dims[index]] - tree.split_vals[index]))
+    #println(far_min)
+    #println("----")
     # Only go far node if the distance from the k-th best node crosses hyperplane
-    if abs2(point[tree.split_dims[index]] - tree.split_vals[index]) < best_dists[1]
-         _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, far_node)
+    #if far_min < best_dists[1]
+        if abs2(point[tree.split_dims[index]] - tree.split_vals[index]) < best_dists[1]
+             _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, far_node, min_dist)
+        end
     end
     return
 end
@@ -409,18 +404,20 @@ end
 # Returns the sorted list of indices for all points in the tree inside a
 # hypersphere of a given point with a given radius.
 function query_ball_point{T <: FloatingPoint}(tree::KDTree{T},
-                                              point::Vector{T},
+                                              p::Vector{T},
                                               radius::T)
 
-    if size(point,1) != size(tree.data, 1)
+    if size(p, 1) != size(tree.data, 1)
         error(string("Wrong dimension of input point, points in the tree",
                      " have dimension ", size(tree.data, 1), " you",
-                     " gave a point with dimension ", size(point,1), "."))
+                     " gave a point with dimension ", size(p,1), "."))
     end
 
     index = 1
     idx_in_ball = Int[]
-    _in_ball(tree, index, point, radius^2 , idx_in_ball)
+
+    init_min, init_max = get_min_max_distance(tree.hyper_recs[1], p)
+    _in_ball(tree, index, p, abs2(radius) , idx_in_ball, init_min, init_max)
 
     if tree.data_reordered
         for i in 1:length(idx_in_ball)
@@ -432,19 +429,20 @@ function query_ball_point{T <: FloatingPoint}(tree::KDTree{T},
     return idx_in_ball
 end
 
-query_ball_point{P <: Real, R <: Real}(tree::KDTree, point::Vector{P}, radius::R) =
-  query_ball_point(tree, float(point), float(radius))
+query_ball_point{P <: Real, R <: Real}(tree::KDTree, p::Vector{P}, r::R) =
+  query_ball_point(tree, float(p), float(r))
 
 
 # Explicitly check the distance between leaf node and point while traversing
 function _in_ball{T <: FloatingPoint}(tree::KDTree{T},
                                             index::Int,
-                                            point::Vector{T},
+                                            p::Vector{T},
                                             r::T,
-                                            idx_in_ball::Vector{Int})
+                                            idx_in_ball::Vector{Int},
+                                            min_dist::T,
+                                            max_dist::T)
 
-    min_d, max_d = get_min_max_distance(tree.hyper_recs[index], point)
-    if min_d > r # Hyper sphere is outside hyper rectangle, skip the whole sub tree
+    if min_dist > r # Hyper sphere is outside hyper rectangle, skip the whole sub tree
         return
     end
 
@@ -455,7 +453,7 @@ function _in_ball{T <: FloatingPoint}(tree::KDTree{T},
                     tree.last_node_size, index)
         for z in p_index:p_index + n_p - 1
             idx = tree.data_reordered ? z : tree.indices[z]
-            dist_d = euclidean_distance_red(tree, idx, point)
+            dist_d = euclidean_distance_red(tree, idx, p)
             if dist_d < r
                 push!(idx_in_ball, idx)
             end
@@ -463,11 +461,29 @@ function _in_ball{T <: FloatingPoint}(tree::KDTree{T},
         return
     end
 
-    if max_d < r
+    if max_dist < r
         addall(tree, index, idx_in_ball)
     else
-        _in_ball(tree, getleft(index), point, r, idx_in_ball)
-        _in_ball(tree, getright(index), point, r, idx_in_ball)
+        d =  tree.split_dims[index]
+        # We are querying 3 times so makes no sense to do this optimization unless n_d > 3.
+        if tree.n_d > 3
+            # # Remove contribution from this rectangle
+            min_d_dim, max_d_dim = get_min_max_dim(tree.hyper_recs[index], p, d)
+            max_dist -= max_d_dim
+            min_dist -= min_d_dim
+
+            # Add contribution of left node
+            min_d_dim, max_d_dim = get_min_max_dim(tree.hyper_recs[getleft(index)], p, d)
+            _in_ball(tree, getleft(index), p, r, idx_in_ball, min_dist + min_d_dim, max_dist + max_d_dim)
+
+            # Add contribution of right node
+            min_d_dim, max_d_dim = get_min_max_dim(tree.hyper_recs[getright(index)], p, d)
+            _in_ball(tree, getright(index), p, r, idx_in_ball, min_dist + min_d_dim, max_dist + max_d_dim)
+        else
+            min_dist, max_dist = get_min_max_distance(tree.hyper_recs[index], p)
+            _in_ball(tree, getleft(index), p, r, idx_in_ball, min_dist, max_dist)
+            _in_ball(tree, getright(index), p, r, idx_in_ball, min_dist, max_dist)
+        end
     end
 end
 
@@ -494,6 +510,152 @@ end
 
 
 
+# Returns the sorted list of indices for all points in the tree inside a
+# hypersphere of a given point with a given radius.
+function query_ball_point{T <: FloatingPoint}(tree::KDTree{T},
+                                              tree2::KDTree{T},
+                                              r::T)
+
+    if tree.data_reordered || tree2.data_reordered
+        error("Trees with reoredered data not currently supported")
+    end
+
+    if size(tree.data, 1) != size(tree2.data, 1)
+        error(string("Wrong dimension of input tree, points in the tree",
+                     " have dimension ", size(tree.data, 1), " you",
+                     " gave a tree with dimension ", size(tree2.data, 1), "."))
+    end
+
+    index = 1
+    idx_in_ball =  Array((Array{Int64, 1}), size(tree.data, 2)) 
+    for i in 1:length(idx_in_ball)
+        idx_in_ball[i] = Int[]
+    end
+
+    init_min, init_max = get_min_max_distance(tree.hyper_recs[1], tree2.hyper_recs[1])
+
+    _in_ball(tree, index, tree2, index, abs2(r) , idx_in_ball, init_min, init_max)
+
+
+
+    return idx_in_ball
+end
+
+query_ball_point{P <: Real, R <: Real}(tree::KDTree, p::Vector{P}, r::R) =
+  query_ball_point(tree, float(p), float(r))
+
+
+# Explicitly check the distance between leaf node and point while traversing
+function _in_ball{T <: FloatingPoint}(tree::KDTree{T},
+                                      index::Int,
+                                      tree2::KDTree{T},
+                                      index2::Int,
+                                      r::T,
+                                      idx_in_ball::Vector{Vector{Int}},
+                                      min_dist::T,
+                                      max_dist::T)
+    if min_dist > r # Hyper sphere is outside hyper rectangle, skip the whole sub tree
+        return
+
+    elseif max_dist < r
+        addall(tree, index, tree2, index2, idx_in_ball)
+    
+    elseif isleaf(tree, index)
+        if isleaf(tree2, index2)
+            p_index = point_index(tree.cross_node, tree.offset, tree.last_node_size,
+                              tree.leafsize, tree.n_internal, index)
+            p_index2 = point_index(tree2.cross_node, tree2.offset, tree2.last_node_size,
+                              tree2.leafsize, tree2.n_internal, index2)
+
+            n_p =  n_ps(tree.n_leafs, tree.n_internal, tree.leafsize,
+                    tree.last_node_size, index)
+
+            n_p2 = n_ps(tree2.n_leafs, tree2.n_internal, tree2.leafsize,
+                    tree2.last_node_size, index2)
+
+            for i in p_index:p_index + n_p - 1
+                idx = tree.data_reordered ? i : tree.indices[i]
+                for j in p_index2:p_index2 + n_p2 - 1
+                    idx2 = tree2.data_reordered ? j : tree2.indices[j]
+                    dist_d = euclidean_distance_red(tree, idx, tree2, idx2)
+                    if dist_d < r
+                        push!(idx_in_ball[idx], idx2)
+                    end
+                end
+            end
+        else # tree: leaf, tree2: internal
+            # L
+            min_dist, max_dist = get_min_max_distance(tree.hyper_recs[index], tree2.hyper_recs[getleft(index2)])
+            _in_ball(tree, index, tree2, getleft(index2), r, idx_in_ball, min_dist, max_dist)
+
+            # R
+            min_dist, max_dist = get_min_max_distance(tree.hyper_recs[index], tree2.hyper_recs[getright(index2)])
+            _in_ball(tree, index, tree2, getright(index2), r, idx_in_ball, min_dist, max_dist)
+        end 
+    else # tree: internal
+        if isleaf(tree2, index2) # tree2: leaf
+       
+            # L
+            min_dist, max_dist = get_min_max_distance(tree.hyper_recs[getleft(index)], tree2.hyper_recs[index2])
+            _in_ball(tree, getleft(index), tree2, index2, r, idx_in_ball, min_dist, max_dist)
+
+            # R
+            min_dist, max_dist = get_min_max_distancee(tree.hyper_recs[getright(index)], tree2.hyper_recs[index2])
+            _in_ball(tree, getright(index), tree2, index2, r, idx_in_ball, min_dist, max_dist)
+        else # both internal
+  
+            # LL
+            min_dist, max_dist = get_min_max_distance(tree.hyper_recs[getleft(index)], tree2.hyper_recs[getleft(index2)])
+            _in_ball(tree, getleft(index), tree2, getleft(index2), r, idx_in_ball, min_dist, max_dist)
+
+            # RR
+            min_dist, max_dist = get_min_max_distance(tree.hyper_recs[getright(index)], tree2.hyper_recs[getright(index2)])
+            _in_ball(tree, getright(index), tree2, getright(index2), r, idx_in_ball, min_dist, max_dist)
+
+            # LR
+            min_dist, max_dist = get_min_max_distance(tree.hyper_recs[getleft(index)], tree2.hyper_recs[getright(index2)])
+            _in_ball(tree, getleft(index), tree2, getright(index2), r, idx_in_ball, min_dist, max_dist)
+
+            # RL
+            min_dist, max_dist = get_min_max_distance(tree.hyper_recs[getright(index)], tree2.hyper_recs[getleft(index2)])
+            _in_ball(tree, getright(index), tree2, getleft(index2), r, idx_in_ball, min_dist, max_dist)
+        end
+    end
+    return
+end
+
+
+# Adds everything in this subtree since we have determined
+# that the hyper rectangle completely encloses the hyper sphere
+function addall(tree::KDTree, index::Int, tree2::KDTree, index2::Int, idx_in_ball::Vector{Vector{Int}})
+   if isleaf(tree, index)
+        if isleaf(tree2, index2)
+            p_index = point_index(tree.cross_node, tree.offset, tree.last_node_size,
+                              tree.leafsize, tree.n_internal, index)
+            p_index2 = point_index(tree2.cross_node, tree2.offset, tree2.last_node_size,
+                              tree2.leafsize, tree2.n_internal, index2)
+
+            n_p =  n_ps(tree.n_leafs, tree.n_internal, tree.leafsize,
+                    tree.last_node_size, index)
+            n_p2 = n_ps(tree2.n_leafs, tree2.n_internal, tree2.leafsize,
+                    tree2.last_node_size, index2)
+
+            for i in p_index:p_index + n_p - 1
+                idx = tree.data_reordered ? i : tree.indices[i]
+                for j in p_index2:p_index2 + n_p2 - 1
+                    idx2 = tree2.data_reordered ? j : tree2.indices[j]
+                    push!(idx_in_ball[idx], idx2)
+                end
+            end
+        else         
+            addall(tree, index, tree2, getleft(index2), idx_in_ball)
+            addall(tree, index, tree2, getright(index2), idx_in_ball) 
+        end
+    else
+        addall(tree, getleft(index), tree2, index2, idx_in_ball)
+        addall(tree, getright(index), tree2, index2, idx_in_ball) 
+    end
+end
 
 
 ####################################################################
@@ -532,9 +694,8 @@ function _select!{T <: FloatingPoint}(v::AbstractVector, k::Int, lo::Int,
 end
 
 
-
 # In place heap sort
-function heap_sort_inplace!(xs::AbstractArray, xis::AbstractArray{Int})
+function heap_sort_inplace!{T <: FloatingPoint}(xs::AbstractArray{T}, xis::AbstractArray{Int})
     for i in length(xs):-1:2
         xs[i], xs[1] = xs[1], xs[i]
         xis[i], xis[1] = xis[1], xis[i]
