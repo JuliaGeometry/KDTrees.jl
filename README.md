@@ -31,7 +31,7 @@ so the original data given is untouched.
 ### Range searches
 
 The exported `query_ball_point(tree, point, radius)` finds all points closer than the `radius` argument to the `point`. The function
-returns a sorted list of the indices of the points in range.
+returns a list of the indices of the points in range.
 
 ```julia
 using KDTrees

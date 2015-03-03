@@ -56,6 +56,34 @@ function point_index(cross_node::Int, offset::Int, last_node_size:: Int,
     end
 end
 
+# Returns the range of indices for any node, internal or terminal
+function node_indices(tree, index)
+    if isleaf(tree, index)
+        p_index = point_index(tree.cross_node, tree.offset, tree.last_node_size,
+                              tree.leafsize, tree.n_internal, index)
+        n_p =  n_ps(tree.n_leafs, tree.n_internal, tree.leafsize,
+                    tree.last_node_size, index)
+        l1 = p_index
+        r1 = p_index + n_p -1
+        return l1, r1, 0, -1
+    else
+        first_leaf = tree.n_internal + 1
+        left, right = index, index
+        while (left < first_leaf) left = getleft(left) end
+        while (right < first_leaf) right = getright(right) end
+
+        if left < right
+            return node_indices(tree, left)[1], node_indices(tree, right)[2], 0, -1
+        else
+            l1 = node_indices(tree, first_leaf)[1]
+            r1 = node_indices(tree, right)[2]
+            l2 = node_indices(tree, left)[1]
+            r2 = node_indices(tree, tree.n_leafs + tree.n_internal)[2]
+            return l1, r1, l2, r2
+        end
+    end
+end
+
 
 # Constructor for KDTree
 function KDTree{T <: FloatingPoint}(data::Matrix{T},
@@ -344,11 +372,8 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree{T},
     end
 
     if isleaf(tree, index)
-        p_index = point_index(tree.cross_node, tree.offset, tree.last_node_size,
-                              tree.leafsize, tree.n_internal, index)
-        n_p =  n_ps(tree.n_leafs, tree.n_internal, tree.leafsize,
-                    tree.last_node_size, index)
-        for z in p_index:p_index + n_p - 1
+        l1, r1, l2, r2 =  node_indices(tree, index)
+        for z in l1:r1
             idx = tree.data_reordered ? z : tree.indices[z]
             dist_d = euclidean_distance_red(tree, idx, point)
             if dist_d <= best_dists[1]
@@ -413,7 +438,6 @@ function query_ball_point{T <: FloatingPoint}(tree::KDTree{T},
         end
     end
 
-    sort!(idx_in_ball)
     return idx_in_ball
 end
 
@@ -440,11 +464,8 @@ function _in_ball{T <: FloatingPoint}(tree::KDTree{T},
     end
 
     if isleaf(tree, index)
-        p_index = point_index(tree.cross_node, tree.offset, tree.last_node_size,
-                              tree.leafsize, tree.n_internal, index)
-        n_p =  n_ps(tree.n_leafs, tree.n_internal, tree.leafsize,
-                    tree.last_node_size, index)
-        for z in p_index:p_index + n_p - 1
+        l1, r1, l2, r2 =  node_indices(tree, index)
+        for z in l1:r1
             idx = tree.data_reordered ? z : tree.indices[z]
             dist_d = euclidean_distance_red(tree, idx, p)
             if dist_d < r
@@ -482,21 +503,14 @@ end
 # Adds everything in this subtree since we have determined
 # that the hyper rectangle completely encloses the hyper sphere
 function addall(tree::KDTree, index::Int, idx_in_ball::Vector{Int})
-   if isleaf(tree, index)
-        p_index = point_index(tree.cross_node, tree.offset, tree.last_node_size,
-                              tree.leafsize, tree.n_internal, index)
-
-        n_p =  n_ps(tree.n_leafs, tree.n_internal, tree.leafsize,
-                    tree.last_node_size, index)
-        for z in p_index:p_index + n_p - 1
+    l1, r1, l2, r2 =  node_indices(tree, index)
+    for r in (l1:r1, l2:r2)
+        for z in r
             idx = tree.data_reordered ? z : tree.indices[z]
             push!(idx_in_ball, idx)
         end
-        return
-    else
-        addall(tree, getleft(index), idx_in_ball)
-        addall(tree, getright(index), idx_in_ball)
     end
+    return
 end
 
 
@@ -527,8 +541,6 @@ function query_ball_point{T <: FloatingPoint}(tree::KDTree{T},
 
     _in_ball(tree, index, tree2, index, abs2(r) , idx_in_ball, init_min, init_max)
 
-
-
     return idx_in_ball
 end
 
@@ -555,20 +567,11 @@ function _in_ball{T <: FloatingPoint}(tree::KDTree{T},
     
     elseif isleaf(tree, index)
         if isleaf(tree2, index2)
-            p_index = point_index(tree.cross_node, tree.offset, tree.last_node_size,
-                              tree.leafsize, tree.n_internal, index)
-            p_index2 = point_index(tree2.cross_node, tree2.offset, tree2.last_node_size,
-                              tree2.leafsize, tree2.n_internal, index2)
-
-            n_p =  n_ps(tree.n_leafs, tree.n_internal, tree.leafsize,
-                    tree.last_node_size, index)
-
-            n_p2 = n_ps(tree2.n_leafs, tree2.n_internal, tree2.leafsize,
-                    tree2.last_node_size, index2)
-
-            for i in p_index:p_index + n_p - 1
+            l1, r1, l2, r2 =  node_indices(tree, index)
+            l1_2, r1_2, l2_2, r2_2 =  node_indices(tree2, index2)
+            for i in l1:r1
                 idx = tree.data_reordered ? i : tree.indices[i]
-                for j in p_index2:p_index2 + n_p2 - 1
+                for j in l1_2:r1_2
                     idx2 = tree2.data_reordered ? j : tree2.indices[j]
                     dist_d = euclidean_distance_red(tree, idx, tree2, idx2)
                     if dist_d < r
@@ -598,33 +601,20 @@ end
 # Adds everything in this subtree since we have determined
 # that the hyper rectangle completely encloses the hyper sphere
 function addall(tree::KDTree, index::Int, tree2::KDTree, index2::Int, idx_in_ball::Vector{Vector{Int}})
-   if isleaf(tree, index)
-        if isleaf(tree2, index2)
-            p_index = point_index(tree.cross_node, tree.offset, tree.last_node_size,
-                              tree.leafsize, tree.n_internal, index)
-            p_index2 = point_index(tree2.cross_node, tree2.offset, tree2.last_node_size,
-                              tree2.leafsize, tree2.n_internal, index2)
-
-            n_p =  n_ps(tree.n_leafs, tree.n_internal, tree.leafsize,
-                    tree.last_node_size, index)
-            n_p2 = n_ps(tree2.n_leafs, tree2.n_internal, tree2.leafsize,
-                    tree2.last_node_size, index2)
-
-            for i in p_index:p_index + n_p - 1
-                idx = tree.data_reordered ? i : tree.indices[i]
-                for j in p_index2:p_index2 + n_p2 - 1
+    l1, r1, l2, r2 = node_indices(tree, index)
+    l1_2, r1_2, l2_2, r2_2 = node_indices(tree2, index2)
+    for r in (l1:r1, l2:r2)
+        for i in r 
+            idx = tree.data_reordered ? i : tree.indices[i]
+            for r2 in (l1_2:r1_2, l2_2:r2_2)
+                for j in r2
                     idx2 = tree2.data_reordered ? j : tree2.indices[j]
                     push!(idx_in_ball[idx], idx2)
                 end
             end
-        else         
-            addall(tree, index, tree2, getleft(index2), idx_in_ball)
-            addall(tree, index, tree2, getright(index2), idx_in_ball) 
         end
-    else
-        addall(tree, getleft(index), tree2, index2, idx_in_ball)
-        addall(tree, getright(index), tree2, index2, idx_in_ball) 
     end
+    return
 end
 
 
