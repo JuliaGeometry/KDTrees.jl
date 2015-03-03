@@ -20,7 +20,7 @@ function run_bench_query_ball()
             t = time_ns()
             for z = 1:n_iters
                 p = rand(dims)
-                query_ball_point(tree, p, r)
+                idxs = query_ball_point(tree, p, r)
             end
             t = (time_ns() - float(t)) / 10^9 
             times[i,j] =  t / n_iters

@@ -414,11 +414,12 @@ end
 
 
 
-# Returns the sorted list of indices for all points in the tree inside a
+# Returns the list of indices for all points in the tree inside a
 # hypersphere of a given point with a given radius.
 function query_ball_point{T <: FloatingPoint}(tree::KDTree{T},
-                                              p::Vector{T},
-                                              radius::T)
+                                              point::Vector{T},
+                                              radius::T,
+                                              sort::Bool = false)
 
     if size(p, 1) != size(tree.data, 1)
         error(string("Wrong dimension of input point, points in the tree",
@@ -436,6 +437,10 @@ function query_ball_point{T <: FloatingPoint}(tree::KDTree{T},
         for i in 1:length(idx_in_ball)
             idx_in_ball[i] = tree.indices[idx_in_ball[i]]
         end
+    end
+
+    if sort
+        sort!(idx_in_ball)
     end
 
     return idx_in_ball
