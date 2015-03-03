@@ -291,7 +291,7 @@ end
 # Query functions
 ####################################################################
 # Finds the k nearest neighbour to a given point in space.
-function k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree, point::Vector{T}, k::Int)
+function k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree, point::Vector{T}, k::Int, full_rec_dim::Int = 6)
 
     if k > size(tree.data, 2) || k <= 0
         error("k > number of points in tree or <= 0")
@@ -307,12 +307,9 @@ function k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree, point::Vector{T},
     best_idxs = [-1 for _ in 1:k]
     best_dists = [typemax(T) for _ in 1:k]
 
-    if tree.n_d > 7
-        init_min = get_min_distance(tree.hyper_recs[1], point)
-    else
-        init_min = 0.0
-    end
-    _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, 1, init_min)
+    init_min = get_min_distance(tree.hyper_recs[1], point)
+
+    _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, 1, init_min, full_rec_dim)
 
     # Sqrt here because distances are stored in reduced format.
     @devec best_dists[:] = sqrt(best_dists)
@@ -338,9 +335,13 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree{T},
                                                   best_idxs ::Vector{Int},
                                                   best_dists::Vector{T},
                                                   index::Int,
-                                                  min_dist::T)
+                                                  min_dist::T,
+                                                  full_rec_dim::Int)
 
 
+    if min_dist > best_dists[1] # Hyper sphere is outside hyper rectangle, skip the whole sub tree
+        return
+    end
 
     if isleaf(tree, index)
         p_index = point_index(tree.cross_node, tree.offset, tree.last_node_size,
@@ -367,33 +368,20 @@ function _k_nearest_neighbour{T <: FloatingPoint}(tree::KDTree{T},
         close_node = getright(index)
     end
 
-    
+    _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, close_node, min_dist, full_rec_dim)
 
-    _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, close_node, min_dist)
+    if tree.n_d >= full_rec_dim
+        rec = tree.hyper_recs[close_node]
+        dim = tree.split_dims[index]
+        min_d_dim = get_min_dim(rec, point, dim)
 
+        far_min = min_dist - min_d_dim + abs2(point[tree.split_dims[index]] - tree.split_vals[index])
+    else 
+        far_min =  abs2(point[tree.split_dims[index]] - tree.split_vals[index])
+    end
 
-    if tree.n_d >= 7 
-        if min_dist > best_dists[1] # Hyper sphere is outside hyper rectangle, skip the whole sub tree
-            return
-        end
-
-        min_d_dim = get_min_dim(tree.hyper_recs[index], point, tree.split_dims[index])
-        min_d_dim2 = get_min_dim(tree.hyper_recs[far_node], point, tree.split_dims[index])
-        far_min = min_dist - min_d_dim + min_d_dim2
-        
-        if far_min < best_dists[1]
-                _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, far_node, far_min)
-        end
-    else
-        
-    #println(abs2(point[tree.split_dims[index]] - tree.split_vals[index]))
-    #println(far_min)
-    #println("----")
-    # Only go far node if the distance from the k-th best node crosses hyperplane
-    #if far_min < best_dists[1]
-        if abs2(point[tree.split_dims[index]] - tree.split_vals[index]) < best_dists[1]
-             _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, far_node, min_dist)
-        end
+    if far_min < best_dists[1]
+            _k_nearest_neighbour(tree, point, k, best_idxs, best_dists, far_node, far_min, full_rec_dim)
     end
     return
 end
@@ -446,6 +434,11 @@ function _in_ball{T <: FloatingPoint}(tree::KDTree{T},
         return
     end
 
+    if max_dist < r
+        addall(tree, index, idx_in_ball)
+        return
+    end
+
     if isleaf(tree, index)
         p_index = point_index(tree.cross_node, tree.offset, tree.last_node_size,
                               tree.leafsize, tree.n_internal, index)
@@ -461,30 +454,28 @@ function _in_ball{T <: FloatingPoint}(tree::KDTree{T},
         return
     end
 
-    if max_dist < r
-        addall(tree, index, idx_in_ball)
+    d =  tree.split_dims[index]
+
+    # We are querying 3 times so makes no sense to do this optimization unless n_d > 3.
+    if tree.n_d > 3
+        # # Remove contribution from this rectangle
+        min_d_dim, max_d_dim = get_min_max_dim(tree.hyper_recs[index], p, d)
+        max_dist -= max_d_dim
+        min_dist -= min_d_dim
+
+        # Add contribution of left node
+        min_d_dim, max_d_dim = get_min_max_dim(tree.hyper_recs[getleft(index)], p, d)
+        _in_ball(tree, getleft(index), p, r, idx_in_ball, min_dist + min_d_dim, max_dist + max_d_dim)
+
+        # Add contribution of right node
+        min_d_dim, max_d_dim = get_min_max_dim(tree.hyper_recs[getright(index)], p, d)
+        _in_ball(tree, getright(index), p, r, idx_in_ball, min_dist + min_d_dim, max_dist + max_d_dim)
     else
-        d =  tree.split_dims[index]
-        # We are querying 3 times so makes no sense to do this optimization unless n_d > 3.
-        if tree.n_d > 3
-            # # Remove contribution from this rectangle
-            min_d_dim, max_d_dim = get_min_max_dim(tree.hyper_recs[index], p, d)
-            max_dist -= max_d_dim
-            min_dist -= min_d_dim
-
-            # Add contribution of left node
-            min_d_dim, max_d_dim = get_min_max_dim(tree.hyper_recs[getleft(index)], p, d)
-            _in_ball(tree, getleft(index), p, r, idx_in_ball, min_dist + min_d_dim, max_dist + max_d_dim)
-
-            # Add contribution of right node
-            min_d_dim, max_d_dim = get_min_max_dim(tree.hyper_recs[getright(index)], p, d)
-            _in_ball(tree, getright(index), p, r, idx_in_ball, min_dist + min_d_dim, max_dist + max_d_dim)
-        else
-            min_dist, max_dist = get_min_max_distance(tree.hyper_recs[index], p)
-            _in_ball(tree, getleft(index), p, r, idx_in_ball, min_dist, max_dist)
-            _in_ball(tree, getright(index), p, r, idx_in_ball, min_dist, max_dist)
-        end
+        min_dist, max_dist = get_min_max_distance(tree.hyper_recs[index], p)
+        _in_ball(tree, getleft(index), p, r, idx_in_ball, min_dist, max_dist)
+        _in_ball(tree, getright(index), p, r, idx_in_ball, min_dist, max_dist)
     end
+
 end
 
 
@@ -584,22 +575,22 @@ function _in_ball{T <: FloatingPoint}(tree::KDTree{T},
                 end
             end
         else # tree: leaf, tree2: internal
-            # L
+            # !L
             min_dist, max_dist = get_min_max_distance(tree.hyper_recs[index], tree2.hyper_recs[getleft(index2)])
             _in_ball(tree, index, tree2, getleft(index2), r, idx_in_ball, min_dist, max_dist)
 
-            # R
+            # !R
             min_dist, max_dist = get_min_max_distance(tree.hyper_recs[index], tree2.hyper_recs[getright(index2)])
             _in_ball(tree, index, tree2, getright(index2), r, idx_in_ball, min_dist, max_dist)
         end 
     else # tree: internal
         if isleaf(tree2, index2) # tree2: leaf
        
-            # L
+            # L!
             min_dist, max_dist = get_min_max_distance(tree.hyper_recs[getleft(index)], tree2.hyper_recs[index2])
             _in_ball(tree, getleft(index), tree2, index2, r, idx_in_ball, min_dist, max_dist)
 
-            # R
+            # R!
             min_dist, max_dist = get_min_max_distancee(tree.hyper_recs[getright(index)], tree2.hyper_recs[index2])
             _in_ball(tree, getright(index), tree2, index2, r, idx_in_ball, min_dist, max_dist)
         else # both internal
