@@ -545,6 +545,8 @@ function _in_ball{T <: FloatingPoint}(tree::KDTree{T},
                                       idx_in_ball::Vector{Vector{Int}},
                                       min_dist::T,
                                       max_dist::T)
+
+    min_dist, max_dist = get_min_max_distance(tree.hyper_recs[index], tree2.hyper_recs[index2])
     if min_dist > r # Hyper sphere is outside hyper rectangle, skip the whole sub tree
         return
 
@@ -575,40 +577,17 @@ function _in_ball{T <: FloatingPoint}(tree::KDTree{T},
                 end
             end
         else # tree: leaf, tree2: internal
-            # !L
-            min_dist, max_dist = get_min_max_distance(tree.hyper_recs[index], tree2.hyper_recs[getleft(index2)])
             _in_ball(tree, index, tree2, getleft(index2), r, idx_in_ball, min_dist, max_dist)
-
-            # !R
-            min_dist, max_dist = get_min_max_distance(tree.hyper_recs[index], tree2.hyper_recs[getright(index2)])
             _in_ball(tree, index, tree2, getright(index2), r, idx_in_ball, min_dist, max_dist)
         end 
     else # tree: internal
         if isleaf(tree2, index2) # tree2: leaf
-       
-            # L!
-            min_dist, max_dist = get_min_max_distance(tree.hyper_recs[getleft(index)], tree2.hyper_recs[index2])
             _in_ball(tree, getleft(index), tree2, index2, r, idx_in_ball, min_dist, max_dist)
-
-            # R!
-            min_dist, max_dist = get_min_max_distancee(tree.hyper_recs[getright(index)], tree2.hyper_recs[index2])
             _in_ball(tree, getright(index), tree2, index2, r, idx_in_ball, min_dist, max_dist)
         else # both internal
-  
-            # LL
-            min_dist, max_dist = get_min_max_distance(tree.hyper_recs[getleft(index)], tree2.hyper_recs[getleft(index2)])
             _in_ball(tree, getleft(index), tree2, getleft(index2), r, idx_in_ball, min_dist, max_dist)
-
-            # RR
-            min_dist, max_dist = get_min_max_distance(tree.hyper_recs[getright(index)], tree2.hyper_recs[getright(index2)])
             _in_ball(tree, getright(index), tree2, getright(index2), r, idx_in_ball, min_dist, max_dist)
-
-            # LR
-            min_dist, max_dist = get_min_max_distance(tree.hyper_recs[getleft(index)], tree2.hyper_recs[getright(index2)])
             _in_ball(tree, getleft(index), tree2, getright(index2), r, idx_in_ball, min_dist, max_dist)
-
-            # RL
-            min_dist, max_dist = get_min_max_distance(tree.hyper_recs[getright(index)], tree2.hyper_recs[getleft(index2)])
             _in_ball(tree, getright(index), tree2, getleft(index2), r, idx_in_ball, min_dist, max_dist)
         end
     end
