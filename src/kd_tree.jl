@@ -417,7 +417,7 @@ end
 # Returns the list of indices for all points in the tree inside a
 # hypersphere of a given point with a given radius.
 function query_ball_point{T <: FloatingPoint}(tree::KDTree{T},
-                                              point::Vector{T},
+                                              p::Vector{T},
                                               radius::T,
                                               sort::Bool = false)
 
