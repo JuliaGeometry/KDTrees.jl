@@ -15,13 +15,13 @@ Kristoffer Carlsson (@KristofferC)
 
 ### Creating the tree
 
-The tree is created wth:
+The tree is created with:
 ```julia
 using KDTrees
 data = rand(3,10^3)
 tree = KDTree(data, leafsize=10, reorder=false)
 ```
-The `data` argument for the tree should be a matrix of floats of dimension `(n_dim, n_points)`. The `leafsize` determines for what number of points the tree should stop splitting. The default value is `leafsize = 10` which is a decent value. However, the optimal leafsize is dependent on the cost of the 
+The `data` argument for the tree should be a matrix of floats of dimension `(n_dim, n_points)`. The argument `leafsize` determines for what number of points the tree should stop splitting. The default value is `leafsize = 10` which is a decent value. However, the optimal leafsize is dependent on the cost of the 
 distance function which is dependent on the dimension of the data.
 
 The `reorder` argument is a bool which determines if the input data should
@@ -32,8 +32,8 @@ so the original data is untouched.
 
 #### Tree - point range search
 
-The exported `inball(tree, point, radius, sort)` finds all points closer than the `radius` argument to the `point`. The function
-returns a list of the indices of the points in range. If `sort` is set to true, the indices will be sorted before getting returned.
+The function `inball(tree, point, radius, sort)` finds all points closer than the `radius` argument to the `point`. The function
+returns a list of the indices of the points in range. If `sort` is set to true, the indices will be sorted before being returned.
 
 ```julia
 using KDTrees
@@ -90,7 +90,7 @@ gives the result
 
 ### K-Nearest-Neighbours
 
-The exported function `knn(tree, point, k)` finds the *k* nearest neighbours to a given point. The function returns a tuple of two lists with the indices and the distances from the given points respectively. These are sorted in the order of smallest to largest distance.
+The function `knn(tree, point, k)` finds the *k* nearest neighbours to a given point. The function returns a tuple of two lists with the indices and the distances from the given points respectively. These are sorted in the order of smallest to largest distance.
 
 ```julia
 using KDTrees
