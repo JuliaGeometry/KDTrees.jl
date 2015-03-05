@@ -19,7 +19,7 @@ function run_bench_knn_points(dim, knn, exps, rounds)
                 timer = time_ns()
                 for k in 1:n_iters
                 	  p = rand(dim)
-                    k_nearest_neighbour(tree, p, knn)
+                    knn(tree, p, knn)
                 end
                 timer = (time_ns() - float(timer)) / 10^9 # To seconds
                 gc_enable()

@@ -17,7 +17,7 @@ function run_bench_build_tree(dim, knn, exps, rounds)
                 timer = time_ns()
                 for k in 1:n_iters
                   data = rand(dim, int(n_point))
-                  tree = KDTree(data)
+                  tree = KDTree(data, 10, true)
                 end
                 timer = (time_ns() - float(timer)) / 10^9 # To seconds
                 if timer < 1.0

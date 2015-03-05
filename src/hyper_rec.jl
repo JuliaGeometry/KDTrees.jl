@@ -62,7 +62,7 @@ end
     return min_dist, max_dist
 end
 
-# (Min, Max) distance between rectangle and point
+# (Min, Max) distance between rectangle and point for a certain dim
 @inline function get_min_max_dim{T <: FloatingPoint}(rec::HyperRectangle{T}, point::Vector{T}, dim::Int)
     min_dist_dim = get_min_dim(rec, point, dim)
     max_dist_dim = get_max_dim(rec, point, dim)
