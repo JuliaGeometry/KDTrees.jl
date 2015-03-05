@@ -4,7 +4,7 @@ Kd trees for Julia.
 
 [![Build Status](https://travis-ci.org/KristofferC/KDTrees.jl.svg?branch=master)](https://travis-ci.org/KristofferC/KDTrees.jl) [![Coverage Status](https://coveralls.io/repos/KristofferC/KDTrees.jl/badge.svg)](https://coveralls.io/r/KristofferC/KDTrees.jl)
 
-This package contains a highly optimized kd tree to perform *k* nearest neighbour searches and range searches.
+This package contains a optimized kd tree to perform *k* nearest neighbour searches and range searches.
 
 The readme contains some usage examples, different benchmarks and a comparison for kNN to scipy's cKDTree.
 
@@ -59,10 +59,10 @@ gives the indices:
 
 KDTrees.jl also supports *dual tree range searches* where the query points are 
 put in their own separate tree and both trees are traversed at the same time 
-while extracting the pairs of points that are in a given range. This can give 
-be more effective when the number of points to query with are large.
+while extracting the pairs of points that are in a given range.
 
-Dual tree range searches are performed with the function `inball(tree1, tree2, radius, sort)` and returns a list of list such that the *i*:th list contains the indices for the points in tree2 that are in range to point *i* in tree. Currently, trees where the data has been optimized for memory allocation is not supported.
+Dual tree range searches are performed with the function `inball(tree1, tree2, radius, sort)` and returns a list of list such that the *i*:th list contains the indices for the points in tree2 that are in range to point *i* in tree.
+If `sort = true` the lists are sorted before being returned. Currently, trees where the data has been optimized for memory allocation is not supported.
 
 ```julia
 using KDTrees
@@ -86,21 +86,6 @@ gives the result
 [4,1]
 [7,6]
 [5,7]
-```
-
-An example showing the speedup vs point by point querying is shown below:
-```julia
-julia> tree = KDTree(rand(3, 10^6));
-
-julia> tree = KDTree(rand(3, 10^6));
-
-julia> @time inball(tree, tree2, 0.15);
-elapsed time: 13.55269431 seconds (3737369440 bytes allocated, 3.00% gc time)
-
-julia> @time for i in 1:10^6
-       inball(tree, rand(5), 0.15)
-       end
-0.683663458
 ```
 
 ### K-Nearest-Neighbours
