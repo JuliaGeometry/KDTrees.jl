@@ -98,6 +98,14 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T},
                                     leafsize::Int = 10,
                                     reorder::Bool = false)
 
+    if size(data, 2) == 0
+        error("Need at least 1 point")
+    end
+
+    if size(data, 1) == 0
+        error("Need at least 1 dimensional points")
+    end
+
     n_d, n_p = size(data)
 
     n_leaf =  ceil(Integer, n_p / leafsize)
