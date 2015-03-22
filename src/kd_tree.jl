@@ -370,7 +370,9 @@ function knn{T <: FloatingPoint}(tree::KDTree, point::Vector{T}, k::Int, full_re
     _knn(tree, point, k, best_idxs, best_dists, 1, init_min, full_rec_dim)
 
     # Sqrt here because distances are stored in reduced format.
-    @devec best_dists[:] = sqrt(best_dists)
+    for i in 1:length(best_dists)
+        best_dists[i] = sqrt(best_dists[i])
+    end
 
     # Translate indices back to the original if we reoredered the data
     if tree.data_reordered
