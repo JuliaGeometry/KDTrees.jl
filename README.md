@@ -21,12 +21,11 @@ using KDTrees
 data = rand(3,10^3)
 tree = KDTree(data, leafsize=10, reorder=false)
 ```
-The `data` argument for the tree should be a matrix of floats of dimension `(n_dim, n_points)`. The argument `leafsize` determines for what number of points the tree should stop splitting. The default value is `leafsize = 10` which is a decent value. However, the optimal leafsize is dependent on the cost of the 
+The `data` argument for the tree should be a matrix of floats of dimension `(n_dim, n_points)`. The argument `leafsize` determines for what number of points the tree should stop splitting. The default value is `leafsize = 10` which is a decent value. However, the optimal leafsize is dependent on the cost of the
 distance function which is dependent on the dimension of the data.
 
 The `reorder` argument is a bool which determines if the input data should
-be reordered to optimize for memory access. Points that are likely to be accessed close in time are also put close in memory. A copy is made of the data
-so the original data is untouched.
+be reordered to optimize for memory access. Points that are likely to be accessed close in time are also put close in memory.
 
 ### Range searches
 
@@ -57,8 +56,8 @@ gives the indices:
 
 #### Tree-tree range search
 
-KDTrees.jl also supports *dual tree range searches* where the query points are 
-put in their own separate tree and both trees are traversed at the same time 
+KDTrees.jl also supports *dual tree range searches* where the query points are
+put in their own separate tree and both trees are traversed at the same time
 while extracting the pairs of points that are in a given range.
 
 Dual tree range searches are performed with the function `inball(tree1, tree2, radius, sort)` and returns a list of list such that the *i*:th list contains the indices for the points in tree2 that are in range to point *i* in tree.
@@ -159,5 +158,5 @@ knn / sec: 730922
 ### Contribution
 
 Contributions are more than welcome. If you have an idea that would make the
-tree have better performance or be more general please create a PR. Make 
+tree have better performance or be more general please create a PR. Make
 sure you run the benchmarks before and after your changes.
