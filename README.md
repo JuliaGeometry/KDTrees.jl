@@ -4,9 +4,9 @@ Kd trees for Julia.
 
 [![Build Status](https://travis-ci.org/KristofferC/KDTrees.jl.svg?branch=master)](https://travis-ci.org/KristofferC/KDTrees.jl) [![Coverage Status](https://coveralls.io/repos/KristofferC/KDTrees.jl/badge.svg)](https://coveralls.io/r/KristofferC/KDTrees.jl)
 
-This package contains a optimized kd tree to perform *k* nearest neighbour searches and range searches.
+This package contains an optimized kd tree to perform *k* nearest neighbour searches and range searches.
 
-The readme contains some usage examples, different benchmarks and a comparison for kNN to scipy's cKDTree.
+This readme contains some usage examples, different benchmarks and a comparison for kNN to scipy's cKDTree.
 
 ## Author
 Kristoffer Carlsson (@KristofferC)
