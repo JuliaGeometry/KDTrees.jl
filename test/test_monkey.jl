@@ -13,7 +13,7 @@ size_data = 1000
 data = rand(dim_data, size_data)
 
     for j = 1:15
-        tree = KDTree(data, rand(1:15), randbool())
+        tree = KDTree(data, rand(1:15), rand(Bool))
         n = rand(1:size_data)
         idx, dist = knn(tree, data[:,n], rand(1:30))
         @fact issorted(dist) => true
@@ -73,7 +73,7 @@ for rn in [true, false]
         r = 0.3
         # Brute force
         for n in 1:size_data
-            d = sqrt(KDTrees.euclidean_distance_red([data[:,n]], p))
+            d = sqrt(KDTrees.euclidean_distance_red(data[:,n], p))
             if d <= r # Closer than the currently k closest.
                 push!(idx, n)
             end
