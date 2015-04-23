@@ -6,7 +6,7 @@ Kd trees for Julia.
 
 This package contains an optimized kd tree to perform *k* nearest neighbour searches and range searches.
 
-This readme contains some usage examples, different benchmarks and a comparison for kNN to scipy's cKDTree.
+The readme includes some usage examples, different benchmarks and a comparison for kNN to scipy's cKDTree.
 
 ## Author
 Kristoffer Carlsson (@KristofferC)
@@ -19,13 +19,15 @@ The tree is created with:
 ```julia
 using KDTrees
 data = rand(3,10^3)
-tree = KDTree(data, leafsize=10, reorder=false)
+leafsize = 10
+reorder = true
+tree = KDTree(data, leafsize, reorder)
 ```
 The `data` argument for the tree should be a matrix of floats of dimension `(n_dim, n_points)`. The argument `leafsize` determines for what number of points the tree should stop splitting. The default value is `leafsize = 10` which is a decent value. However, the optimal leafsize is dependent on the cost of the
 distance function which is dependent on the dimension of the data.
 
 The `reorder` argument is a bool which determines if the input data should
-be reordered to optimize for memory access. Points that are likely to be accessed close in time are also put close in memory.
+be reordered to optimize for memory access. Points that are likely to be accessed close in time are also put close in memory. The default is to enable this.
 
 ### Range searches
 
