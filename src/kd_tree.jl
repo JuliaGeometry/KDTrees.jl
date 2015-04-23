@@ -92,9 +92,14 @@ function node_indices(tree, index)
     end
 end
 
+function KDTree{T <: FloatingPoint}(data::Matrix{T},
+                                    ls::Int = 10,
+                                    reord::Bool = true)
+    KDTree(data, leafsize = ls, reorder = reord)
+end
 
 # Constructor for KDTree
-function KDTree{T <: FloatingPoint}(data::Matrix{T},
+function KDTree{T <: FloatingPoint}(data::Matrix{T};
                                     leafsize::Int = 10,
                                     reorder::Bool = true)
 

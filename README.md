@@ -19,9 +19,7 @@ The tree is created with:
 ```julia
 using KDTrees
 data = rand(3,10^3)
-leafsize = 10
-reorder = true
-tree = KDTree(data, leafsize, reorder)
+KDTree(data, leafsize=10, reorder=false)
 ```
 The `data` argument for the tree should be a matrix of floats of dimension `(n_dim, n_points)`. The argument `leafsize` determines for what number of points the tree should stop splitting. The default value is `leafsize = 10` which is a decent value. However, the optimal leafsize is dependent on the cost of the
 distance function which is dependent on the dimension of the data.
