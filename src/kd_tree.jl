@@ -96,7 +96,7 @@ end
 # Constructor for KDTree
 function KDTree{T <: FloatingPoint}(data::Matrix{T},
                                     leafsize::Int = 10,
-                                    reorder::Bool = false)
+                                    reorder::Bool = true)
 
     if size(data, 2) == 0
         error("Need at least 1 point")
@@ -115,7 +115,7 @@ function KDTree{T <: FloatingPoint}(data::Matrix{T},
     l = floor(Integer, log2(n_leaf))
 
     # Node index of first leaf node in last row
-    cross_node = int(2^(l+1))
+    cross_node = @compat Int(2^(l+1))
 
     # This only happens when n_p / leafsize is a power of 2?
     if cross_node >= n_internal + n_leaf
@@ -412,7 +412,7 @@ function _knn{T <: FloatingPoint}(tree::KDTree{T},
     if isleaf(tree, index)
         l1, r1, l2, r2 =  node_indices(tree, index)
         for z in l1:r1
-            idx = tree.data_reordered ? z : tree.indices[z]
+            idx = ifelse(tree.data_reordered, z, tree.indices[z])
             dist_d = euclidean_distance_red(tree, idx, point)
             if dist_d <= best_dists[1]
                 best_dists[1] = dist_d

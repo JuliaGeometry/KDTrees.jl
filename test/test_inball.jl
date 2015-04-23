@@ -37,8 +37,8 @@ context("KDTrees.inball.tree") do
             0.0 0.0 1.0 1.0 0.0 0.0 1.0 1.0;
             0.0 1.0 0.0 1.0 0.0 1.0 0.0 1.0] # 8 node cube
 
-    tree1 = KDTree(data, 2)
-    tree2 = KDTree([[0.0, 0.0, 0.5] [0.0, 0.0, 0.0]], 1)
+    tree1 = KDTree(data, 2, false)
+    tree2 = KDTree([[0.0, 0.0, 0.5] [0.0, 0.0, 0.0]], 1, false)
 
     idxs = inball(tree1, tree2, 0.6)
     @fact allin(idxs[1], [1, 2]) => true
