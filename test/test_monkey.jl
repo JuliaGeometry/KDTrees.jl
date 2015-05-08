@@ -13,7 +13,7 @@ size_data = 1000
 data = rand(dim_data, size_data)
 
     for j = 1:15
-        tree = KDTree(data, rand(1:15), rand(Bool))
+        tree = KDTree(data, leafsize = rand(1:15), reorder = rand(Bool))
         n = rand(1:size_data)
         idx, dist = knn(tree, data[:,n], rand(1:30))
         @fact issorted(dist) => true
@@ -39,7 +39,7 @@ for i in 1:10
     dim_data = rand(1:5)
     size_data = rand(100:151)
     data = rand(dim_data, size_data)
-    tree = KDTree(data, rand(1:10))
+    tree = KDTree(data, leafsize = rand(1:10))
     p = rand(dim_data)
 
     # Brute force
@@ -68,7 +68,7 @@ for rn in [true, false]
         dim_data = rand(1:6)
         size_data = rand(20:250)
         data = rand(dim_data, size_data)
-        tree = KDTree(data, 3, rn)
+        tree = KDTree(data, leafsize = 3, reorder = rn)
         p = zeros(dim_data)
         r = 0.3
         # Brute force
@@ -97,7 +97,7 @@ for rn in [true, false]
         dim_data = rand(1:5)
         size_data = rand(100:1000)
         data = randn(dim_data, size_data)
-        tree = KDTree(data, rand(1:10), rn)
+        tree = KDTree(data, leafsize = rand(1:10), reorder = rn)
 
         point = [randn() for x in 1:dim_data]
         idxs_ball = []

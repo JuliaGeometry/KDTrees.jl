@@ -7,7 +7,7 @@ for rn in [true, false]
             0.0 0.0 1.0 1.0 0.0 0.0 1.0 1.0;
             0.0 1.0 0.0 1.0 0.0 1.0 0.0 1.0] # 8 node cube
 
-    tree = KDTree(data, 2, rn)
+    tree = KDTree(data, leafsize = 2, reorder = rn)
 
     idxs = inball(tree, [1.1, 1.1, 1.1], 0.2)
     @fact idxs => [8] # Only corner 8 at least 0.2 distance away from [1.1, 1.1, 1.1]
@@ -37,8 +37,8 @@ context("KDTrees.inball.tree") do
             0.0 0.0 1.0 1.0 0.0 0.0 1.0 1.0;
             0.0 1.0 0.0 1.0 0.0 1.0 0.0 1.0] # 8 node cube
 
-    tree1 = KDTree(data, 2, false)
-    tree2 = KDTree([[0.0, 0.0, 0.5] [0.0, 0.0, 0.0]], 1, false)
+    tree1 = KDTree(data, leafsize = 2, reorder = false)
+    tree2 = KDTree([[0.0, 0.0, 0.5] [0.0, 0.0, 0.0]], leafsize = 1, reorder = false)
 
     idxs = inball(tree1, tree2, 0.6)
     @fact allin(idxs[1], [1, 2]) => true
