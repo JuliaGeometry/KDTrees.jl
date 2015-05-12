@@ -65,8 +65,8 @@ If `sort = true` the lists are sorted before being returned. Currently, trees wh
 
 ```julia
 using KDTrees
-tree = KDTree(rand(1, 12))
-tree2 = KDTree(rand(1, 16))
+tree = KDTree(rand(1, 12), reorder = false)
+tree2 = KDTree(rand(1, 16), reorder = false)
 inball(tree, tree2, 0.1)
 ```
 
