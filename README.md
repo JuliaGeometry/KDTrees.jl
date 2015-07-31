@@ -60,7 +60,7 @@ KDTrees.jl also supports *dual tree range searches* where the query points are
 put in their own separate tree and both trees are traversed at the same time
 while extracting the pairs of points that are in a given range.
 
-Dual tree range searches are performed with the function `inball(tree1, tree2, radius, sort)` and returns a list of list such that the *i*:th list contains the indices for the points in tree2 that are in range to point *i* in tree.
+Dual tree range searches are performed with the function `inball(tree1, tree2, radius, sort=false)` and returns a list of list such that the *i*:th list contains the indices for the points in tree2 that are in range to point *i* in tree.
 If `sort = true` the lists are sorted before being returned. Currently, trees where the data has been optimized for memory allocation is not supported.
 
 ```julia
