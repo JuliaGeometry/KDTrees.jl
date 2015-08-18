@@ -5,10 +5,10 @@ julia:
 notifications:
     email: false
 script:
-    - julia -e 'Pkg.init(); Pkg.clone(pwd())'
+    - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
     - julia -e 'Pkg.add("FactCheck");'
     - julia -e 'Pkg.add("Devectorize");'
-    - julia -e 'Pkg.test("KDTrees", coverage=true)'
+    - julia -e 'Pkg.clone(pwd()); Pkg.test("KDTrees"; coverage=true)'
 
 after_success:
 - julia -e 'cd(Pkg.dir("KDTrees")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
