@@ -409,9 +409,12 @@ function _knn{T <: FloatingPoint}(tree::KDTree{T},
     # if the distance is smaller add both the distance and index
     # to their respective heaps.
     if isleaf(tree, index)
-        l1, r1, l2, r2 =  node_indices(tree, index)
-        for z in l1:r1
-            idx = ifelse(tree.data_reordered, z, tree.indices[z])
+        p_index = point_index(tree.cross_node, tree.offset, tree.last_size,
+                              tree.leafsize, tree.n_internal, index)
+        n_p =  n_ps(tree.n_leafs, tree.n_internal, tree.leafsize,
+                    tree.last_size, index)
+        for z in p_index:p_index + n_p - 1
+            idx = tree.data_reordered ? z : tree.indices[z]
             dist_d = euclidean_distance_red(tree, idx, point)
             if dist_d <= best_dists[1]
                 best_dists[1] = dist_d
@@ -510,8 +513,11 @@ function _in_ball{T <: FloatingPoint}(tree::KDTree{T},
     end
 
     if isleaf(tree, index)
-        l1, r1, l2, r2 =  node_indices(tree, index)
-        for z in l1:r1
+        p_index = point_index(tree.cross_node, tree.offset, tree.last_size,
+                              tree.leafsize, tree.n_internal, index)
+        n_p =  n_ps(tree.n_leafs, tree.n_internal, tree.leafsize,
+                    tree.last_size, index)
+        for z in p_index:p_index + n_p - 1
             idx = tree.data_reordered ? z : tree.indices[z]
             dist_d = euclidean_distance_red(tree, idx, p)
             if dist_d < r
