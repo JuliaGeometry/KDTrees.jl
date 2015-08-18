@@ -2,7 +2,7 @@
 
 Kd trees for Julia.
 
-[![Build Status](https://travis-ci.org/KristofferC/KDTrees.jl.svg?branch=master)](https://travis-ci.org/KristofferC/KDTrees.jl) [![Coverage Status](https://coveralls.io/repos/KristofferC/KDTrees.jl/badge.svg)](https://coveralls.io/r/KristofferC/KDTrees.jl)
+[![Build Status](https://travis-ci.org/JuliaGeometry/KDTrees.jl.svg?branch=master)](https://travis-ci.org/JuliaGeometry/KDTrees.jl) [![Coverage Status](https://coveralls.io/repos/KristofferC/KDTrees.jl/badge.svg)](https://coveralls.io/r/KristofferC/KDTrees.jl)
 
 This package contains an optimized kd tree to perform *k* nearest neighbour searches and range searches.
 
