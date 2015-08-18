@@ -372,7 +372,7 @@ function knn{T <: FloatingPoint}(tree::KDTree, point::Vector{T}, k::Int, full_re
     end
 
     # Sqrt here because distances are stored in reduced format.
-    for i in 1:length(best_dists)
+    @inbounds for i in 1:length(best_dists)
         best_dists[i] = sqrt(best_dists[i])
     end
 

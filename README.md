@@ -152,7 +152,7 @@ julia> t = @elapsed for i = 1:10^5
        knn(tree, rand(3), 5)
        end;
 julia> print("knn / sec: ", 10^5 / t)
-knn / sec: 730922
+knn / sec: 700675
 ```
 
 ### Contribution
