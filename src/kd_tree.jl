@@ -400,10 +400,9 @@ function _knn{T <: FloatingPoint}(tree::KDTree{T},
                                   min_dist::T,
                                   full_rec_dim::Int)
 
-    # Hyper sphere is outside hyper rectangle, skip the whole sub tree
-    if min_dist > best_dists[1]
-        return
-    end
+    data_reordered = tree.data_reordered
+    indices = tree.indices
+
 
     # If leaf, brute force through the points in the node and
     # if the distance is smaller add both the distance and index
@@ -413,8 +412,8 @@ function _knn{T <: FloatingPoint}(tree::KDTree{T},
                               tree.leafsize, tree.n_internal, index)
         n_p =  n_ps(tree.n_leafs, tree.n_internal, tree.leafsize,
                     tree.last_size, index)
-        for z in p_index:p_index + n_p - 1
-            idx = tree.data_reordered ? z : tree.indices[z]
+        @inbounds for z in p_index:p_index + n_p - 1
+            idx = data_reordered ? z : indices[z]
             dist_d = euclidean_distance_red(tree, idx, point)
             if dist_d <= best_dists[1]
                 best_dists[1] = dist_d
@@ -720,7 +719,7 @@ end
 
 # In place heap sort
 function heap_sort_inplace!{T <: FloatingPoint}(xs::AbstractArray{T}, xis::AbstractArray{Int})
-    for i in length(xs):-1:2
+    @inbounds for i in length(xs):-1:2
         xs[i], xs[1] = xs[1], xs[i]
         xis[i], xis[1] = xis[1], xis[i]
         percolate_down!(xs, xis, xs[1], xis[1], i-1)

@@ -29,13 +29,14 @@ end
 # Rectangle - Point functions
 ############################################
 @inline function get_min_dim{T <: FloatingPoint}(rec::HyperRectangle{T}, point::Vector{T}, dim::Int)
-    return abs2(max(0, max(rec.mins[dim] - point[dim], point[dim] - rec.maxes[dim])))
+    @inbounds d = abs2(max(0, max(rec.mins[dim] - point[dim], point[dim] - rec.maxes[dim])))
+    d
 end
 
 @inline function get_max_dim{T <: FloatingPoint}(rec::HyperRectangle{T}, point::Vector{T}, dim::Int)
-    return abs2(max(rec.maxes[dim] - point[dim], point[dim] - rec.mins[dim]))
+    @inbounds d = abs2(max(rec.maxes[dim] - point[dim], point[dim] - rec.mins[dim]))
+    d
 end
-
 
 # Max distance between rectangle and point
 @inline function get_max_distance{T <: FloatingPoint}(rec::HyperRectangle{T}, point::Vector{T})
@@ -68,7 +69,6 @@ end
     max_dist_dim = get_max_dim(rec, point, dim)
     return min_dist_dim, max_dist_dim
 end
-
 
 
 ############################################
@@ -109,5 +109,3 @@ end
     max_dist_dim = get_max_distance(rec1, rec2, dim)
     return min_dist_dim, max_dist_dim
 end
-
-
