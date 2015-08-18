@@ -16,8 +16,8 @@ data = rand(dim_data, size_data)
         tree = KDTree(data, leafsize = rand(1:15), reorder = rand(Bool))
         n = rand(1:size_data)
         idx, dist = knn(tree, data[:,n], rand(1:30))
-        @fact issorted(dist) => true
-        @fact n => idx[1]
+        @fact issorted(dist) --> true
+        @fact n --> idx[1]
 
     end
 end
@@ -54,7 +54,7 @@ for i in 1:10
     idx, dist = knn(tree, p, k)
 
     for i in 1:length(idx)
-        @fact idx[i] in keys(pq) => true
+        @fact idx[i] in keys(pq) --> true
     end
 end
 end # context
@@ -81,7 +81,7 @@ for rn in [true, false]
 
         q_idxs = inball(tree, p, r)
 
-        @fact allin(idx, q_idxs) => true
+        @fact allin(idx, q_idxs) --> true
     end
 end
 
@@ -108,7 +108,7 @@ for rn in [true, false]
         end
         idxs_knn, dists = knn(tree, point, length(idxs_ball))
 
-        @fact allin(idxs_knn, idxs_ball) => true
+        @fact allin(idxs_knn, idxs_ball) --> true
     end
 end
 end # context
