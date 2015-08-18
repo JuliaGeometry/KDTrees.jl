@@ -364,9 +364,12 @@ function knn{T <: FloatingPoint}(tree::KDTree, point::Vector{T}, k::Int, full_re
     best_idxs = [-1 for _ in 1:k]
     best_dists = [typemax(T) for _ in 1:k]
 
-    init_min = get_min_distance(tree.hyper_recs[1], point)
-
-    _knn(tree, point, k, best_idxs, best_dists, 1, init_min, full_rec_dim)
+    if tree.n_d < full_rec_dim
+        _knn_small(tree, point, k, best_idxs, best_dists, 1)
+    else
+        init_min = get_min_distance(tree.hyper_recs[1], point)
+        _knn(tree, point, k, best_idxs, best_dists, 1, init_min, full_rec_dim)
+    end
 
     # Sqrt here because distances are stored in reduced format.
     for i in 1:length(best_dists)
@@ -397,8 +400,7 @@ function _knn{T <: FloatingPoint}(tree::KDTree{T},
                                   best_idxs ::Vector{Int},
                                   best_dists::Vector{T},
                                   index::Int,
-                                  min_dist::T,
-                                  full_rec_dim::Int)
+                                  min_dist::T)
 
     data_reordered = tree.data_reordered
     indices = tree.indices
@@ -436,20 +438,64 @@ function _knn{T <: FloatingPoint}(tree::KDTree{T},
     # Call close subtree first to improve culling
     _knn(tree, point, k, best_idxs, best_dists, close_node, min_dist, full_rec_dim)
 
-    #
-    if tree.n_d >= full_rec_dim
-        rec = tree.hyper_recs[close_node]
-        dim = tree.split_dims[index]
-        min_d_dim = get_min_dim(rec, point, dim)
+    rec = tree.hyper_recs[close_node]
+    dim = tree.split_dims[index]
+    min_d_dim = get_min_dim(rec, point, dim)
 
-        far_min = min_dist - min_d_dim + abs2(point[tree.split_dims[index]] - tree.split_vals[index])
-    else
-        far_min =  abs2(point[tree.split_dims[index]] - tree.split_vals[index])
-    end
+    far_min = min_dist - min_d_dim + abs2(point[tree.split_dims[index]] - tree.split_vals[index])
 
     # Only call the sub tree further away if it is close enough
     if far_min < best_dists[1]
             _knn(tree, point, k, best_idxs, best_dists, far_node, far_min, full_rec_dim)
+    end
+    return
+end
+
+function _knn_small{T <: FloatingPoint}(tree::KDTree{T},
+                                        point::Vector{T},
+                                        k::Int,
+                                        best_idxs ::Vector{Int},
+                                        best_dists::Vector{T},
+                                        index::Int)
+
+    data_reordered = tree.data_reordered
+    indices = tree.indices
+
+    # If leaf, brute force through the points in the node and
+    # if the distance is smaller add both the distance and index
+    # to their respective heaps.
+    if isleaf(tree, index)
+        p_index = point_index(tree.cross_node, tree.offset, tree.last_size,
+                              tree.leafsize, tree.n_internal, index)
+        n_p =  n_ps(tree.n_leafs, tree.n_internal, tree.leafsize,
+                    tree.last_size, index)
+        @inbounds for z in p_index:p_index + n_p - 1
+            idx = data_reordered ? z : indices[z]
+            dist_d = euclidean_distance_red(tree, idx, point)
+            if dist_d <= best_dists[1]
+                best_dists[1] = dist_d
+                best_idxs[1] = idx
+                percolate_down!(best_dists, best_idxs, dist_d, idx)
+            end
+        end
+        return
+    end
+
+    # Find what subtree is closest to the point
+    if point[tree.split_dims[index]] < tree.split_vals[index]
+        close_node = getleft(index)
+        far_node = getright(index)
+    else
+        far_node = getleft(index)
+        close_node = getright(index)
+    end
+
+    # Call close subtree first to improve culling
+    _knn_small(tree, point, k, best_idxs, best_dists, close_node)
+
+    # Only call the sub tree further away if it is close enough
+    if abs2(point[tree.split_dims[index]] - tree.split_vals[index]) < best_dists[1]
+            _knn_small(tree, point, k, best_idxs, best_dists, far_node)
     end
     return
 end
@@ -735,7 +781,7 @@ function percolate_down!{T <: FloatingPoint}(xs::AbstractArray{T},
     i = 1
     @inbounds while (l = getleft(i)) <= len
         r = getright(i)
-        j = r > len || (xs[l] > xs[r]) ? l : r
+        j = ifelse(r > len || (xs[l] > xs[r]), l, r)
         if xs[j] > dist
             xs[i] = xs[j]
             xis[i] = xis[j]
