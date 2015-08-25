@@ -368,7 +368,7 @@ function knn{T <: FloatingPoint}(tree::KDTree, point::Vector{T}, k::Int, full_re
         _knn_small(tree, point, k, best_idxs, best_dists, 1)
     else
         init_min = get_min_distance(tree.hyper_recs[1], point)
-        _knn(tree, point, k, best_idxs, best_dists, 1, init_min, full_rec_dim)
+        _knn(tree, point, k, best_idxs, best_dists, 1, init_min)
     end
 
     # Sqrt here because distances are stored in reduced format.
@@ -436,7 +436,7 @@ function _knn{T <: FloatingPoint}(tree::KDTree{T},
     end
 
     # Call close subtree first to improve culling
-    _knn(tree, point, k, best_idxs, best_dists, close_node, min_dist, full_rec_dim)
+    _knn(tree, point, k, best_idxs, best_dists, close_node, min_dist)
 
     rec = tree.hyper_recs[close_node]
     dim = tree.split_dims[index]
@@ -446,7 +446,7 @@ function _knn{T <: FloatingPoint}(tree::KDTree{T},
 
     # Only call the sub tree further away if it is close enough
     if far_min < best_dists[1]
-            _knn(tree, point, k, best_idxs, best_dists, far_node, far_min, full_rec_dim)
+            _knn(tree, point, k, best_idxs, best_dists, far_node, far_min)
     end
     return
 end
