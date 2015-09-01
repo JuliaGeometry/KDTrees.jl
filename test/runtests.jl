@@ -17,6 +17,7 @@ module TestKDTrees
 
 
     include("test_knn.jl")
+    include("test_build.jl")
     include("test_inball.jl")
     include("test_monkey.jl")
 
