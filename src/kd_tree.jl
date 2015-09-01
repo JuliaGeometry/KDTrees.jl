@@ -256,7 +256,7 @@ function build_KDTree{T <: FloatingPoint}(index::Int,
 
 
     n_d = size(data, 1)
-    split_dim = -1
+    split_dim = 1
     max_spread = zero(T)
     hyper_rec = hyper_recs[index]
     # Find dimension and and spread where the spread is maximal
