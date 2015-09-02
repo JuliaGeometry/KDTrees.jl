@@ -1,3 +1,8 @@
+if VERSION >= v"0.4.0-dev+6641"
+    include("precompile.jl")
+    __precompile__()
+end
+
 module KDTrees
 
     import Base.show
