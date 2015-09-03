@@ -41,7 +41,7 @@ end
 # Max distance between rectangle and point
 @inline function get_max_distance{T <: FloatingPoint}(rec::HyperRectangle{T}, point::Vector{T})
     max_dist = zero(T)
-    @inbounds for dim in 1:size(point,1)
+    @simd for dim in 1:size(point,1)
         max_dist += get_max_dim(rec, point, dim)
     end
     return max_dist
@@ -50,7 +50,7 @@ end
 # Min distance between rectangle and point
 @inline function get_min_distance{T <: FloatingPoint}(rec::HyperRectangle{T}, point::Vector{T})
     min_dist = zero(T)
-    @inbounds for dim in 1:size(point,1)
+    @simd for dim in 1:size(point,1)
         min_dist += get_min_dim(rec, point, dim)
     end
     return min_dist
@@ -75,11 +75,13 @@ end
 # Rectangle-rectangle functions
 ############################################
 @inline function get_min_dim{T <: FloatingPoint}(rec1::HyperRectangle{T},  rec2::HyperRectangle{T}, dim::Int)
-    return abs2(max(0, max(rec1.mins[dim] - rec2.maxes[dim], rec2.mins[dim] - rec1.maxes[dim])))
+    @inbounds d = abs2(max(0, max(rec1.mins[dim] - rec2.maxes[dim], rec2.mins[dim] - rec1.maxes[dim])))
+    return d
 end
 
 @inline function get_max_dim{T <: FloatingPoint}(rec1::HyperRectangle{T},  rec2::HyperRectangle{T}, dim::Int)
-    return abs2(max(rec1.maxes[dim] - rec2.mins[dim],  rec2.maxes[dim] - rec1.mins[dim]))
+    @inbounds d = abs2(max(rec1.maxes[dim] - rec2.mins[dim],  rec2.maxes[dim] - rec1.mins[dim]))
+    return d
 end
 
 @inline function get_min_max_distance{T <: FloatingPoint}(rec1::HyperRectangle{T}, rec2::HyperRectangle{T})
@@ -90,7 +92,7 @@ end
 
 @inline function get_min_distance{T <: FloatingPoint}(rec1::HyperRectangle{T}, rec2::HyperRectangle{T})
     min_dist = zero(T)
-    @inbounds for dim in 1:length(rec1.maxes)
+    @simd for dim in 1:length(rec1.maxes)
         min_dist += get_min_dim(rec1, rec2, dim)
     end
     return min_dist
@@ -98,7 +100,7 @@ end
 
 @inline function get_max_distance{T <: FloatingPoint}(rec1::HyperRectangle{T}, rec2::HyperRectangle{T})
     max_dist = zero(T)
-    @inbounds for dim in 1:length(rec1.maxes)
+    @simd for dim in 1:length(rec1.maxes)
         max_dist += get_max_dim(rec1, rec2, dim)
     end
     return max_dist
