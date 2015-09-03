@@ -303,7 +303,7 @@ end
 @inline function euclidean_distance_red{T <: FloatingPoint}(point_1::AbstractVector{T},
                                                             point_2::AbstractVector{T})
     dist = 0.0
-    @simd for i = 1:size(point_1, 1)
+    for i = 1:size(point_1, 1)
         @inbounds dist += abs2(point_1[i] - point_2[i])
     end
     return dist
@@ -314,7 +314,7 @@ end
                                                             idx::Int,
                                                             point::AbstractVector{T})
     dist = 0.0
-    @simd for i = 1:tree.n_d
+    for i = 1:tree.n_d
         @inbounds dist += abs2(tree.data[i, idx] - point[i])
     end
     return dist
@@ -325,7 +325,7 @@ end
                                                             tree2::KDTree{T},
                                                             idx2::Int)
     dist = 0.0
-    @simd for i = 1:tree.n_d
+    for i = 1:tree.n_d
         @inbounds dist += abs2(tree.data[i, idx] - tree2.data[i, idx2])
     end
     return dist
