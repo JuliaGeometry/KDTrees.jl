@@ -2,7 +2,7 @@
 # KD Tree
 ####################################################################
 # The KDTree type
-immutable KDTree{T <: FloatingPoint}
+immutable KDTree{T <: AbstractFloat}
     data::Matrix{T} # dim x n_p array with floats
     hyper_recs::Vector{HyperRectangle{T}} # Each hyper rectangle bounds its children
     indices::Vector{Int} # Translation between tree index to point indes or adsa
@@ -93,7 +93,7 @@ function node_indices(tree, index)
 end
 
 # Constructor for KDTree
-function KDTree{T <: FloatingPoint}(data::Matrix{T};
+function KDTree{T <: AbstractFloat}(data::Matrix{T};
                                     leafsize::Int = 10,
                                     reorder::Bool = true)
 
@@ -188,7 +188,7 @@ end
 # Splits the hyper cubes and calls recursively
 # with the new cubes and node indices.
 # TODO: The number of arguments are growing ridiculous.
-function build_KDTree{T <: FloatingPoint}(index::Int,
+function build_KDTree{T <: AbstractFloat}(index::Int,
                                           data::Matrix{T},
                                           data_reordered::Matrix{T},
                                           split_vals::Vector{T},
@@ -300,7 +300,7 @@ end
 # Distances
 ####################################################################
 # Reduced euclidian distances
-@inline function euclidean_distance_red{T <: FloatingPoint}(point_1::AbstractVector{T},
+@inline function euclidean_distance_red{T <: AbstractFloat}(point_1::AbstractVector{T},
                                                             point_2::AbstractVector{T})
     dist = 0.0
     for i = 1:size(point_1, 1)
@@ -310,7 +310,7 @@ end
 end
 
 
-@inline function euclidean_distance_red{T <: FloatingPoint}(tree::KDTree{T},
+@inline function euclidean_distance_red{T <: AbstractFloat}(tree::KDTree{T},
                                                             idx::Int,
                                                             point::AbstractVector{T})
     dist = 0.0
@@ -320,7 +320,7 @@ end
     return dist
 end
 
-@inline function euclidean_distance_red{T <: FloatingPoint}(tree::KDTree{T},
+@inline function euclidean_distance_red{T <: AbstractFloat}(tree::KDTree{T},
                                                             idx::Int,
                                                             tree2::KDTree{T},
                                                             idx2::Int)
@@ -346,7 +346,7 @@ end
 # is increasing it is more and more important to use the actual distance.
 # The tipping point seems to be right now for around a dimension of 6
 # which is the value that will be used default.
-function knn{T <: FloatingPoint}(tree::KDTree, point::Vector{T}, k::Int, full_rec_dim::Int = 6)
+function knn{T <: AbstractFloat}(tree::KDTree, point::Vector{T}, k::Int, full_rec_dim::Int = 6)
 
     # Check that k is not greater than points in tree
     if k > size(tree.data, 2) || k <= 0
@@ -394,7 +394,7 @@ knn{P <: Real}(tree::KDTree, point::Vector{P}, k::Int) =
   knn(tree, float(point), k)
 
 
-function _knn{T <: FloatingPoint}(tree::KDTree{T},
+function _knn{T <: AbstractFloat}(tree::KDTree{T},
                                   point::Vector{T},
                                   k::Int,
                                   best_idxs ::Vector{Int},
@@ -451,7 +451,7 @@ function _knn{T <: FloatingPoint}(tree::KDTree{T},
     return
 end
 
-function _knn_small{T <: FloatingPoint}(tree::KDTree{T},
+function _knn_small{T <: AbstractFloat}(tree::KDTree{T},
                                         point::Vector{T},
                                         k::Int,
                                         best_idxs ::Vector{Int},
@@ -503,7 +503,7 @@ end
 
 # Returns the list of indices closer than a given point at a given
 # radius.
-function inball{T <: FloatingPoint}(tree::KDTree{T},
+function inball{T <: AbstractFloat}(tree::KDTree{T},
                                               p::Vector{T},
                                               radius::T,
                                               sort::Bool = false)
@@ -540,7 +540,7 @@ inball{P <: Real, R <: Real}(tree::KDTree, p::Vector{P}, r::R) =
 
 
 # Explicitly check the distance between leaf node and point while traversing
-function _in_ball{T <: FloatingPoint}(tree::KDTree{T},
+function _in_ball{T <: AbstractFloat}(tree::KDTree{T},
                                             index::Int,
                                             p::Vector{T},
                                             r::T,
@@ -614,7 +614,7 @@ end
 
 # Returns the sorted list of indices for all points in the tree inside a
 # hypersphere of a given point with a given radius.
-function inball{T <: FloatingPoint}(tree::KDTree{T},
+function inball{T <: AbstractFloat}(tree::KDTree{T},
                                     tree2::KDTree{T},
                                     r::T,
                                     sort::Bool = false)
@@ -656,7 +656,7 @@ inball{P <: Real, R <: Real}(tree::KDTree, p::Vector{P}, r::R) =
 
 
 # Explicitly check the distance between leaf node and point while traversing
-function _in_ball{T <: FloatingPoint}(tree::KDTree{T},
+function _in_ball{T <: AbstractFloat}(tree::KDTree{T},
                                       index::Int,
                                       tree2::KDTree{T},
                                       index2::Int,
@@ -732,7 +732,7 @@ end
 # and modified because I couldn't figure out how to get rid of
 # the overhead when I passed in a new anonymous function
 # to the "by" argument in each node. I also removed the return value.
-function _select!{T <: FloatingPoint}(v::AbstractVector, k::Int, lo::Int,
+function _select!{T <: AbstractFloat}(v::AbstractVector, k::Int, lo::Int,
                                           hi::Int, data::Matrix{T}, dim::Int)
     lo <= k <= hi || error("select index $k is out of range $lo:$hi")
      @inbounds while lo < hi
@@ -764,7 +764,7 @@ end
 
 
 # In place heap sort
-function heap_sort_inplace!{T <: FloatingPoint}(xs::AbstractArray{T}, xis::AbstractArray{Int})
+function heap_sort_inplace!{T <: AbstractFloat}(xs::AbstractArray{T}, xis::AbstractArray{Int})
     @inbounds for i in length(xs):-1:2
         xs[i], xs[1] = xs[1], xs[i]
         xis[i], xis[1] = xis[1], xis[i]
@@ -773,7 +773,7 @@ function heap_sort_inplace!{T <: FloatingPoint}(xs::AbstractArray{T}, xis::Abstr
 end
 
 # Binary min-heap percolate down.
-function percolate_down!{T <: FloatingPoint}(xs::AbstractArray{T},
+function percolate_down!{T <: AbstractFloat}(xs::AbstractArray{T},
                                              xis::AbstractArray{Int},
                                              dist::T,
                                              index::Int,
