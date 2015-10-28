@@ -41,8 +41,8 @@ end
 # Max distance between rectangle and point
 @inline function get_max_distance{T <: AbstractFloat}(rec::HyperRectangle{T}, point::Vector{T})
     max_dist = zero(T)
-    @inbounds for dim in 1:size(point,1)
-        max_dist += get_max_dim(rec, point, dim)
+    @inbounds @simd for dim in eachindex(point)
+        max_dist += abs2(max(rec.maxes[dim] - point[dim], point[dim] - rec.mins[dim]))
     end
     return max_dist
 end
@@ -50,8 +50,8 @@ end
 # Min distance between rectangle and point
 @inline function get_min_distance{T <: AbstractFloat}(rec::HyperRectangle{T}, point::Vector{T})
     min_dist = zero(T)
-    @inbounds for dim in 1:size(point,1)
-        min_dist += get_min_dim(rec, point, dim)
+    @inbounds @simd for dim in eachindex(point)
+        min_dist += abs2(max(0, max(rec.mins[dim] - point[dim], point[dim] - rec.maxes[dim])))
     end
     return min_dist
 end

@@ -302,20 +302,20 @@ end
 # Reduced euclidian distances
 @inline function euclidean_distance_red{T <: AbstractFloat}(point_1::AbstractVector{T},
                                                             point_2::AbstractVector{T})
-    dist = 0.0
-    for i = 1:size(point_1, 1)
+    dist = zero(T)
+    @simd for i in eachindex(point_1)
         @inbounds dist += abs2(point_1[i] - point_2[i])
     end
     return dist
 end
 
 
-@inline function euclidean_distance_red{T <: AbstractFloat}(tree::KDTree{T},
+@inline function euclidean_distance_red{T <: AbstractFloat}(data::Matrix{T},
                                                             idx::Int,
                                                             point::AbstractVector{T})
-    dist = 0.0
-    for i = 1:tree.n_d
-        @inbounds dist += abs2(tree.data[i, idx] - point[i])
+    dist = zero(T)
+    @simd for i in eachindex(point)
+        @inbounds dist += abs2(data[i, idx] - point[i])
     end
     return dist
 end
@@ -372,7 +372,7 @@ function knn{T <: AbstractFloat}(tree::KDTree, point::Vector{T}, k::Int, full_re
     end
 
     # Sqrt here because distances are stored in reduced format.
-    @inbounds for i in 1:length(best_dists)
+    @inbounds @simd for i in eachindex(best_dists)
         best_dists[i] = sqrt(best_dists[i])
     end
 
@@ -416,7 +416,7 @@ function _knn{T <: AbstractFloat}(tree::KDTree{T},
                     tree.last_size, index)
         @inbounds for z in p_index:p_index + n_p - 1
             idx = data_reordered ? z : indices[z]
-            dist_d = euclidean_distance_red(tree, idx, point)
+            dist_d = euclidean_distance_red(tree.data, idx, point)
             if dist_d <= best_dists[1]
                 best_dists[1] = dist_d
                 best_idxs[1] = idx
@@ -471,7 +471,7 @@ function _knn_small{T <: AbstractFloat}(tree::KDTree{T},
                     tree.last_size, index)
         @inbounds for z in p_index:p_index + n_p - 1
             idx = data_reordered ? z : indices[z]
-            dist_d = euclidean_distance_red(tree, idx, point)
+            dist_d = euclidean_distance_red(tree.data, idx, point)
             if dist_d <= best_dists[1]
                 best_dists[1] = dist_d
                 best_idxs[1] = idx
@@ -564,7 +564,7 @@ function _in_ball{T <: AbstractFloat}(tree::KDTree{T},
                     tree.last_size, index)
         for z in p_index:p_index + n_p - 1
             idx = tree.data_reordered ? z : tree.indices[z]
-            dist_d = euclidean_distance_red(tree, idx, p)
+            dist_d = euclidean_distance_red(tree.data, idx, p)
             if dist_d < r
                 push!(idx_in_ball, idx)
             end
