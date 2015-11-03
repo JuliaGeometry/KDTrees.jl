@@ -4,6 +4,8 @@ Kd trees for Julia.
 
 [![Build Status](https://travis-ci.org/JuliaGeometry/KDTrees.jl.svg?branch=master)](https://travis-ci.org/JuliaGeometry/KDTrees.jl) [![Coverage Status](https://coveralls.io/repos/KristofferC/KDTrees.jl/badge.svg)](https://coveralls.io/r/KristofferC/KDTrees.jl)
 
+**Note:** This package is deprecated in favor of `NearestNeighbors.jl` which can be found at: https://github.com/KristofferC/NearestNeighbors.jl.
+
 This package contains an optimized kd tree to perform *k* nearest neighbour searches and range searches.
 
 The readme includes some usage examples, different benchmarks and a comparison for kNN to scipy's cKDTree.
@@ -68,12 +70,12 @@ KDTrees.jl also supports *dual tree range searches* where the query points are
 put in their own separate tree and both trees are traversed at the same time
 while extracting the pairs of points that are in a given range.
 
-Dual tree range searches are performed with the function `inball(tree1, tree2, radius [, sort=false])` 
-and returns a list of list such that the *i*:th list contains the indices for the 
+Dual tree range searches are performed with the function `inball(tree1, tree2, radius [, sort=false])`
+and returns a list of list such that the *i*:th list contains the indices for the
 points in tree2 that are in range to point *i* in tree.
-If `sort = true` the lists are sorted before being returned. Currently, trees where the 
-data has been optimized for memory allocation is not supported. This function has not 
-gotten the same amount of optimization as the others so it might be faster just to 
+If `sort = true` the lists are sorted before being returned. Currently, trees where the
+data has been optimized for memory allocation is not supported. This function has not
+gotten the same amount of optimization as the others so it might be faster just to
 loop through the points one by one.
 
 ```julia
@@ -102,10 +104,10 @@ gives the result
 
 ## Benchmarks
 
-The benchmarks have been made with computer with a 4 core Intel i5-2500K @ 4.2 
+The benchmarks have been made with computer with a 4 core Intel i5-2500K @ 4.2
 GHz with Julia v0.4.0-dev+3034 with `reorder = true` in the building of the trees.
 
-Clicking on a plot takes you to the Plotly site for the plot where the exact 
+Clicking on a plot takes you to the Plotly site for the plot where the exact
 data can be seen.
 
 ### KNN benchmark
@@ -122,7 +124,7 @@ One of the most popular packages for scientific computing in Python
 is the scipy package. It can therefore be interesting to see how
 KDTrees.jl compares against scipy's cKDTree.
 
-A KNN search for a 100 000 point tree was performed for the five closest 
+A KNN search for a 100 000 point tree was performed for the five closest
 neighbours. The code and the resulting search speed are shown, first for
 cKDTree and then for KDTrees.jl
 
